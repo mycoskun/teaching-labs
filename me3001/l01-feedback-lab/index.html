@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ME 3001 Feedback Lab</title>
+<meta name="description" content="Four browser simulations for ME 3001 Lecture 1: cruise control, the shower, Watt's governor and a human-in-the-loop tracking game.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<style>
+:root{
+  --ground:#F3F5F8; --surface:#FFFFFF; --surface2:#E9EDF3; --line:#D3D9E2;
+  --ink:#1B2533; --ink2:#4A5568; --muted:#7A8599;
+  --navy:#14213D; --accent:#E8590C; --accent-soft:#FFF1E8;
+  --sig-r:#2A78D6; --sig-e:#E34948; --sig-u:#B87A00; --sig-c:#008300; --sig-w:#4A3AA7; --sig-b:#4A5568;
+  --s-open:#EB6834; --s-closed:#2A78D6;
+  --ask-bg:#FFF7E0; --ask-bar:#C98500; --key-bg:#EAF2FB; --warn-bg:#FDECEC; --warn-bar:#C92A2A;
+  --grid:#E3E7EC;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  --cond:"IBM Plex Sans Condensed","Segoe UI Semibold","Arial Narrow",sans-serif;
+  --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#0D1422; --surface:#151F33; --surface2:#1D2A42; --line:#2C3A55;
+    --ink:#E6EBF3; --ink2:#B4BFD0; --muted:#8793A8;
+    --navy:#9FB3D1; --accent:#FF7A33; --accent-soft:#3A2416;
+    --sig-r:#5B9DF0; --sig-e:#FF6B6A; --sig-u:#E5AE3A; --sig-c:#3CC25A; --sig-w:#9B8CF0; --sig-b:#A0AEC0;
+    --s-open:#FF8A57; --s-closed:#5B9DF0;
+    --ask-bg:#33290F; --ask-bar:#E5AE3A; --key-bg:#16284A; --warn-bg:#3A1A1C; --warn-bar:#FF6B6A;
+    --grid:#223049;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#0D1422; --surface:#151F33; --surface2:#1D2A42; --line:#2C3A55;
+  --ink:#E6EBF3; --ink2:#B4BFD0; --muted:#8793A8;
+  --navy:#9FB3D1; --accent:#FF7A33; --accent-soft:#3A2416;
+  --sig-r:#5B9DF0; --sig-e:#FF6B6A; --sig-u:#E5AE3A; --sig-c:#3CC25A; --sig-w:#9B8CF0; --sig-b:#A0AEC0;
+  --s-open:#FF8A57; --s-closed:#5B9DF0;
+  --ask-bg:#33290F; --ask-bar:#E5AE3A; --key-bg:#16284A; --warn-bg:#3A1A1C; --warn-bar:#FF6B6A;
+  --grid:#223049;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:clamp(16px,3vw,32px);padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;border-bottom:2px solid var(--navy);padding-bottom:12px}
+.course{font-family:var(--cond);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--cond);font-weight:600;font-size:clamp(28px,4vw,40px);line-height:1.1;margin:2px 0 0;color:var(--navy);text-wrap:balance}
+.lede{color:var(--ink2);max-width:60ch;margin:6px 0 0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:18px;height:3px;border-radius:2px;display:inline-block}
+nav.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 16px}
+nav.tabs button{font:600 15px/1.2 var(--sans);color:var(--ink2);background:transparent;border:1px solid var(--line);border-radius:6px;padding:9px 14px;cursor:pointer;display:flex;gap:8px;align-items:baseline}
+nav.tabs button b{font-family:var(--mono);font-weight:600;color:var(--muted)}
+nav.tabs button[aria-selected="true"]{background:var(--navy);color:var(--ground);border-color:var(--navy)}
+nav.tabs button[aria-selected="true"] b{color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,canvas:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px}
+@media (max-width:880px){.lab{grid-template-columns:minmax(0,1fr)}}
+.lab h2{font-family:var(--cond);font-weight:600;font-size:26px;line-height:1.15;margin:0 0 4px;color:var(--navy);text-wrap:balance}
+.lab .claim{color:var(--ink2);margin:0 0 12px;max-width:68ch}
+.plot{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 10px 6px}
+.plot canvas{display:block;width:100%;height:340px;touch-action:none}
+.plot.tall canvas{height:380px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-family:var(--mono);font-size:13.5px;padding:4px 9px;border-radius:5px;background:var(--surface2);color:var(--ink);font-variant-numeric:tabular-nums;border-left:3px solid var(--c,var(--line))}
+.chip em{font-style:italic;font-family:Cambria,Georgia,serif;font-size:15px;color:var(--c,var(--ink))}
+aside.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:14px;align-self:start}
+.ctl label{display:flex;justify-content:space-between;gap:8px;font-size:14px;font-weight:500;color:var(--ink)}
+.ctl label output{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink2)}
+.ctl small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:2px}
+input[type=range]{width:100%;accent-color:var(--accent);margin:6px 0 0}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:600 14px/1.2 var(--sans);border-radius:6px;padding:9px 12px;cursor:pointer;border:1px solid var(--line);background:var(--surface2);color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:var(--ground)}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{flex:1;font:600 13.5px/1.2 var(--sans);padding:8px 6px;border:0;background:transparent;color:var(--ink2);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--navy);color:var(--ground)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--surface2);border-radius:6px;padding:8px 10px}
+.stat .v{font-family:var(--mono);font-weight:600;font-size:22px;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat .l{font-size:12.5px;color:var(--ink2);line-height:1.3}
+.try{background:var(--ask-bg);border-left:4px solid var(--ask-bar);border-radius:0 6px 6px 0;padding:10px 14px;margin-top:14px}
+.try h3,.model h3{font:600 12.5px/1.2 var(--cond);letter-spacing:.12em;text-transform:uppercase;margin:0 0 6px;color:var(--ask-bar)}
+.try ol{margin:0;padding-left:1.3em}
+.try li{margin:3px 0}
+details.model{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 14px}
+details.model summary{cursor:pointer;font-weight:600;color:var(--navy)}
+details.model p,details.model li{font-size:14.5px;color:var(--ink2);max-width:80ch}
+.eq{font-family:Cambria,"Cambria Math",Georgia,serif;font-style:italic;font-size:17px;color:var(--ink);background:var(--surface2);padding:6px 10px;border-radius:4px;display:inline-block;margin:2px 0;overflow-x:auto;max-width:100%}
+.src{font-size:13px;color:var(--muted)}
+.src a{color:var(--sig-r)}
+.note{font-size:13px;color:var(--muted)}
+.warnbox{background:var(--warn-bg);border-left:4px solid var(--warn-bar);padding:8px 12px;border-radius:0 6px 6px 0;font-size:14px}
+table.scores{width:100%;border-collapse:collapse;font-size:14px}
+table.scores th,table.scores td{text-align:left;padding:5px 4px;border-bottom:1px solid var(--line)}
+table.scores td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+footer.foot{margin-top:28px;border-top:1px solid var(--line);padding-top:12px;font-size:13px;color:var(--muted)}
+.game canvas{height:260px;cursor:ew-resize}
+.game .plot + .plot{margin-top:10px}
+.game .plot.small canvas{height:170px;cursor:default}
+.gov-row{display:grid;grid-template-columns:230px minmax(0,1fr);gap:10px}
+.gov-row .gov-pic canvas{height:340px}
+@media (max-width:620px){.gov-row{grid-template-columns:minmax(0,1fr)}.gov-row .gov-pic canvas{height:240px}}
+.verdict{border-left:4px solid var(--vc,var(--line));padding:6px 10px;background:var(--surface2);border-radius:0 6px 6px 0;font-size:14px;color:var(--ink)}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p style="margin:0 0 8px;font-size:14px"><a href="../../" style="color:var(--sig-r)">&larr; All course labs</a></p>
+<header class="top">
+  <div>
+    <div class="course">ME 3001 System Dynamics and Control · Lecture 1</div>
+    <h1>Feedback lab</h1>
+    <p class="lede">Four small experiments for the first week. Change one thing, predict what will happen, then watch. The letters follow the course notation.</p>
+  </div>
+  <div class="legend" aria-label="Signal colour code">
+    <span><i style="background:var(--sig-r)"></i><em>r</em>&nbsp;reference</span>
+    <span><i style="background:var(--sig-e)"></i><em>e</em>&nbsp;error</span>
+    <span><i style="background:var(--sig-u)"></i><em>u</em>&nbsp;control input</span>
+    <span><i style="background:var(--sig-w)"></i><em>w</em>&nbsp;disturbance</span>
+    <span><i style="background:var(--sig-c)"></i><em>c</em>&nbsp;output</span>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Experiments">
+  <button role="tab" id="tab-cruise" aria-controls="cruise" aria-selected="true"><b>1</b>Cruise control</button>
+  <button role="tab" id="tab-shower" aria-controls="shower" aria-selected="false"><b>2</b>The shower</button>
+  <button role="tab" id="tab-governor" aria-controls="governor" aria-selected="false"><b>3</b>Watt's governor</button>
+  <button role="tab" id="tab-you" aria-controls="you" aria-selected="false"><b>4</b>You are the controller</button>
+</nav>
+
+<!-- ============================================================ 1 CRUISE -->
+<section id="cruise" role="tabpanel" aria-labelledby="tab-cruise">
+<div class="lab">
+  <div>
+    <h2>Two identical cars meet the same hill</h2>
+    <p class="claim">The orange car uses a fixed throttle (open loop). The blue car measures its speed and corrects the error (closed loop). Both are set to 90 km/h.</p>
+    <div class="plot"><canvas id="cr-plot" aria-label="Speed of the open-loop and closed-loop car over time" role="img"></canvas></div>
+    <div class="chips" id="cr-chips"></div>
+  </div>
+  <aside class="panel" aria-label="Cruise control settings">
+    <div class="row">
+      <button class="btn primary" id="cr-hill" aria-pressed="false">Start 3 % hill</button>
+      <button class="btn" id="cr-reset">Reset</button>
+    </div>
+    <div class="ctl"><label for="cr-grade">Road grade <output id="cr-grade-o">0 %</output></label>
+      <input type="range" id="cr-grade" min="-6" max="6" step="0.5" value="0">
+      <small>Disturbance <em>w</em>: the slope force m·g·grade.</small></div>
+    <div class="ctl"><label for="cr-drag">Drag change <output id="cr-drag-o">+0 %</output></label>
+      <input type="range" id="cr-drag" min="-30" max="60" step="5" value="0">
+      <small>Model error: roof box, headwind. The open-loop throttle was calibrated for +0 %.</small></div>
+    <div class="ctl"><label for="cr-K">Feedback gain <em>K</em> <output id="cr-K-o">500 N·s/m</output></label>
+      <input type="range" id="cr-K" min="0" max="4000" step="50" value="500">
+      <small>Extra force per m/s of speed error, blue car only.</small></div>
+    <div class="ctl"><label for="cr-lag"><span>Engine lag 1 s + sensor delay 0.4 s</span><input type="checkbox" id="cr-lag"></label>
+      <small>Real engines and sensors are not instant. Turn this on, then raise <em>K</em>.</small></div>
+    <div class="stats">
+      <div class="stat"><div class="v" id="cr-ss-o" style="color:var(--s-open)">90.0</div><div class="l">open loop, steady speed [km/h]</div></div>
+      <div class="stat"><div class="v" id="cr-ss-c" style="color:var(--s-closed)">90.0</div><div class="l">closed loop, steady speed [km/h]</div></div>
+    </div>
+    <p class="note" id="cr-ss-note">Steady-state values follow from setting dv/dt = 0 in the model below.</p>
+  </aside>
+</div>
+<div class="try"><h3>Predict first, then try</h3><ol>
+  <li>Before pressing <b>Start 3 % hill</b>: how much speed will each car lose? Write a number down.</li>
+  <li>Set the hill back to 0 and add +30 % drag. Which car notices?</li>
+  <li>Set <em>K</em> = 0. What does the blue car turn into?</li>
+  <li>Turn on the engine lag, then raise <em>K</em> step by step. Where does the blue car start to oscillate, and where does the oscillation grow?</li>
+</ol></div>
+<details class="model"><summary>Model and numbers</summary>
+  <p>Point-mass car with linear drag, as in the Lecture 1 enriched slides (Part 3):</p>
+  <p><span class="eq">m dv/dt = −b v + F − m g · grade</span></p>
+  <p>m = 1000 kg, b = 50 N·s/m (nominal), g = 9.81 m/s², set speed r = 25 m/s = 90 km/h.
+  Open loop: F = b r (calibrated for flat road and nominal drag). Closed loop: F = b r + K (r − c).
+  With lag: the engine force follows the command with a 1 s first-order lag, and the speed measurement is 0.4 s old.</p>
+  <p>Hand check for a 3 % hill, no lag: open loop loses m g (0.03) / b = 294.3 / 50 = 5.9 m/s = 21.2 km/h. Closed loop with K = 500 loses 294.3 / 550 = 0.54 m/s = 1.9 km/h. The error shrinks by (b + K)/b = 11.</p>
+  <p>With lag and delay the loop becomes unstable above K ≈ 2800 N·s/m (phase crossover at 1.53 rad/s for K e<sup>−0.4s</sup> / ((s + 1)(1000 s + 50))). You will learn to compute such limits in Lecture 8.</p>
+  <p>This is a teaching model. A linear drag of 50 N·s/m gives 1250 N at 90 km/h, roughly three times the rolling and air resistance of a real car, so the open-loop losses here are illustrations, not predictions for a real car.</p>
+  <p class="src">Parameters m = 1000 kg, b = 50 N·s/m: University of Michigan, <i>Control Tutorials for MATLAB and Simulink</i>, Cruise Control: System Modeling (<a href="https://ctms.engin.umich.edu/CTMS/index.php?example=CruiseControl&amp;section=SystemModeling" target="_blank" rel="noopener">ctms.engin.umich.edu</a>). A nonlinear version with engine map and gears: K. J. Åström, R. M. Murray, <i>Feedback Systems</i>, 2nd ed. (2021), §4.1. Same model as make_figs_L01.py.</p>
+</details>
+</section>
+
+<!-- ============================================================ 2 SHOWER -->
+<section id="shower" role="tabpanel" aria-labelledby="tab-shower" hidden>
+<div class="lab">
+  <div>
+    <h2>Hot water arrives seconds after you turn the valve</h2>
+    <p class="claim">You want 38 °C. Your skin measures the water that left the mixing valve a few seconds ago. The more impatient your hand, the faster you turn the valve for each degree of error.</p>
+    <div class="plot"><canvas id="sh-plot" role="img" aria-label="Water temperature on the skin and at the valve over time"></canvas></div>
+    <div class="chips" id="sh-chips"></div>
+  </div>
+  <aside class="panel" aria-label="Shower settings">
+    <div class="row">
+      <button class="btn primary" id="sh-start">Step into the shower</button>
+      <button class="btn" id="sh-flush">Someone flushes the toilet</button>
+    </div>
+    <div class="ctl"><span style="font-size:14px;font-weight:500">Who turns the valve?</span>
+      <div class="seg" role="group" aria-label="Who turns the valve" id="sh-who" style="margin-top:6px">
+        <button aria-pressed="true" data-w="auto">Simulated hand</button>
+        <button aria-pressed="false" data-w="you">You</button>
+      </div></div>
+    <div class="ctl" id="sh-kappa-box"><label for="sh-kappa">Impatience <output id="sh-kappa-o"></output></label>
+      <input type="range" id="sh-kappa" min="0.2" max="4" step="0.1" value="0.8">
+      <small>How fast the hand turns the valve per degree of error [% of valve travel per second per °C].</small></div>
+    <div class="ctl" id="sh-valve-box" hidden><label for="sh-valve">Valve, hot share <output id="sh-valve-o"></output></label>
+      <input type="range" id="sh-valve" min="0" max="100" step="1" value="30">
+      <small>0 % = all cold, 100 % = all hot. Watch the skin temperature, not the valve temperature.</small></div>
+    <div class="ctl"><label for="sh-flow">Flow rate <output id="sh-flow-o"></output></label>
+      <input type="range" id="sh-flow" min="6" max="12" step="0.5" value="9">
+      <small>Water in pipe and hose: 0.37 L. Delay = volume / flow.</small></div>
+    <div class="stats">
+      <div class="stat"><div class="v" id="sh-L">2.4 s</div><div class="l">transport delay <i>L</i></div></div>
+      <div class="stat"><div class="v" id="sh-aL">0.8</div><div class="l">loop gain × delay, <i>aL</i></div></div>
+    </div>
+    <div id="sh-verdict" class="note"></div>
+  </aside>
+</div>
+<div class="try"><h3>Predict first, then try</h3><ol>
+  <li>Press <b>Step into the shower</b> with the default impatience. Does the temperature overshoot 38 °C?</li>
+  <li>Raise the impatience until the oscillation stops dying out. Compare <i>aL</i> with π/2 = 1.57.</li>
+  <li>Keep the impatience fixed and lower the flow. Why does the same hand now oscillate?</li>
+  <li>Switch to <b>You</b> and steer the valve yourself. What strategy works: fast or patient?</li>
+</ol></div>
+<details class="model"><summary>Model and numbers</summary>
+  <p><span class="eq">T<sub>mix</sub>(t) = (q<sub>h</sub> T<sub>h</sub> + q<sub>c</sub> T<sub>c</sub>) / (q<sub>h</sub> + q<sub>c</sub>)</span> &nbsp; <span class="eq">T<sub>skin</sub>(t) = T<sub>mix</sub>(t − L)</span> &nbsp; <span class="eq">dx/dt = −κ (T<sub>skin</sub> − 38 °C)</span></p>
+  <p>x is the hot share of the valve. T<sub>h</sub> = 55 °C, T<sub>c</sub> = 12 °C (assumed values: WHO asks for stored hot water at 60 °C or more and at least 50 °C at the tap; mains cold water depends on season and region). Pipe: 2 m of 15 mm copper (13.6 mm bore) plus a 1.5 m hose of 8 mm bore holds 0.37 L, so L = 3.7 s at 6 L/min and 1.8 s at 12 L/min. The flush cuts the cold flow by 40 % for 8 s.</p>
+  <p>Near the set point the loop is a pure delay plus an integrator, with loop gain a = κ (T<sub>h</sub> − T<sub>c</sub>). It settles without oscillation for aL &lt; 1/e, with a decaying oscillation for 1/e &lt; aL &lt; π/2, and the oscillation grows for aL &gt; π/2. At the limit the period is 4L.</p>
+  <p class="src">Sources: shower model after R. H. Gielen, PhD thesis, TU Eindhoven (2013), Example 1.1, <a href="https://doi.org/10.6100/IR747896" target="_blank" rel="noopener">doi:10.6100/IR747896</a>; stability limit aL &lt; π/2: N. D. Hayes, J. London Math. Soc. 25 (1950) 226–232; the three regimes: C. Budd, “The shower equation”, Plus Magazine (2021), <a href="https://plus.maths.org/content/shower-equation" target="_blank" rel="noopener">plus.maths.org</a>; hot-water temperatures: WHO, <i>Legionella and the prevention of legionellosis</i> (2007), §4.4.1.</p>
+</details>
+</section>
+
+<!-- ============================================================ 3 GOVERNOR -->
+<section id="governor" role="tabpanel" aria-labelledby="tab-governor" hidden>
+<div class="lab">
+  <div>
+    <h2>The flyballs measure the speed and move the steam valve</h2>
+    <p class="claim">When the load grows, the engine slows, the balls drop inwards and the linkage opens the valve. The speed recovers, but not all the way: Watt's governor is a proportional controller.</p>
+    <div class="gov-row">
+      <div class="plot gov-pic"><canvas id="gv-pic" role="img" aria-label="Animated flyball governor showing arm angle and valve opening"></canvas></div>
+      <div class="plot"><canvas id="gv-plot" role="img" aria-label="Engine speed over time"></canvas></div>
+    </div>
+    <div class="chips" id="gv-chips"></div>
+  </div>
+  <aside class="panel" aria-label="Governor settings">
+    <div class="row">
+      <button class="btn primary" id="gv-step" aria-pressed="false">Add 20 % load</button>
+      <button class="btn" id="gv-reset">Reset</button>
+    </div>
+    <div class="ctl"><label for="gv-load">Load torque <i>F</i> <output id="gv-load-o"></output></label>
+      <input type="range" id="gv-load" min="70" max="140" step="5" value="100">
+      <small>Disturbance <em>w</em>: the machines driven by the engine.</small></div>
+    <div class="ctl"><label for="gv-b">Friction in the governor <i>b</i> <output id="gv-b-o"></output></label>
+      <input type="range" id="gv-b" min="0.6" max="6" step="0.1" value="4">
+      <small>Damping of the arm motion. Vyshnegradskii (1876): without enough friction the governor “hunts”.</small></div>
+    <div class="stats">
+      <div class="stat"><div class="v" id="gv-ss">68.1</div><div class="l">steady speed at this load [rpm]</div></div>
+      <div class="stat"><div class="v" id="gv-vy">2.9</div><div class="l">b J ω₀ / (2 m F), stable if &gt; 1</div></div>
+    </div>
+    <div id="gv-verdict" class="note"></div>
+  </aside>
+</div>
+<div class="try"><h3>Predict first, then try</h3><ol>
+  <li>Press <b>Add 20 % load</b>. Will the speed come back to 68 rpm? Read the steady speed.</li>
+  <li>Lower the friction to about 1.6 kg/s and repeat. The governor is calm at the old load. What happens after the step?</li>
+  <li>Lower the friction to 1.0 kg/s. This oscillation is the “hunting” that Maxwell analysed in 1868.</li>
+  <li>Why is a controller that leaves a speed error still useful? What would remove the error? (Lecture 7: integral action.)</li>
+</ol></div>
+<details class="model"><summary>Model and numbers</summary>
+  <p><span class="eq">φ̈ = ω² sin φ cos φ − (g/l) sin φ − (b/m) φ̇</span> &nbsp; <span class="eq">J ω̇ = k cos φ − F</span></p>
+  <p>φ is the arm angle from the spindle, ω the engine (and spindle) speed, k cos φ the steam torque admitted by the valve linkage, F the load torque. Equilibrium: cos φ₀ = F/k and ω₀² = g k / (l F), so a larger load gives a lower steady speed (droop). Stability condition (Vyshnegradskii, in Pontryagin's form): b J ω₀ / (2 m F) &gt; 1.</p>
+  <p>Illustrative parameters, not data of a real engine: m = 1 kg, l = 0.3 m, J = 20 kg·m², F₀ = 100 N·m, k = 155.6 N·m (φ₀ = 50°), so ω₀ = 7.13 rad/s = 68.1 rpm and the critical friction is 1.40 kg/s at F₀ and 1.84 kg/s at 1.2 F₀. The arms stop at 5° and 85°.</p>
+  <p class="src">Sources: L. S. Pontryagin, <i>Ordinary Differential Equations</i> (1962), as given by J. Sotomayor, L. F. Mello, D. C. Braga, <a href="https://arxiv.org/abs/math/0604177" target="_blank" rel="noopener">arXiv:math/0604177</a>, and by R. Ball, P. Holmes, <a href="https://arxiv.org/abs/nlin/0702044" target="_blank" rel="noopener">arXiv:nlin/0702044</a>; M. Denny, “Watt steam governor stability”, Eur. J. Phys. 23 (2002) 339–349; J. C. Maxwell, “On governors”, Proc. R. Soc. Lond. 16 (1868) 270–283.</p>
+</details>
+</section>
+
+<!-- ============================================================ 4 YOU -->
+<section id="you" role="tabpanel" aria-labelledby="tab-you" hidden>
+<div class="lab game">
+  <div>
+    <h2>Keep the green dot on the blue target</h2>
+    <p class="claim">Drag anywhere on the track (or use the ← → keys) to move your hand <em>u</em>. The green dot <em>c</em> follows your hand, but a hidden disturbance <em>w</em> pushes it around. Each run lasts 20 s.</p>
+    <div class="plot"><canvas id="yo-track" tabindex="0" aria-label="Tracking game track. Use left and right arrow keys or drag to move your hand."></canvas></div>
+    <div class="plot small"><canvas id="yo-plot" role="img" aria-label="Target and output over the last run"></canvas></div>
+  </div>
+  <aside class="panel" aria-label="Game settings">
+    <div class="ctl"><span style="font-size:14px;font-weight:500">Run type</span>
+      <div class="seg" role="group" aria-label="Run type" id="yo-mode" style="margin-top:6px;flex-wrap:wrap">
+        <button aria-pressed="true" data-m="fb">Eyes open</button>
+        <button aria-pressed="false" data-m="ol">Eyes closed</button>
+        <button aria-pressed="false" data-m="delay">Delayed view</button>
+        <button aria-pressed="false" data-m="unst">Unstable</button>
+      </div>
+      <small id="yo-desc">You see the output. This is closed-loop control with you as the controller.</small></div>
+    <button class="btn primary" id="yo-start">Start 20 s run</button>
+    <div class="stats">
+      <div class="stat"><div class="v" id="yo-rms">–</div><div class="l">RMS error, this run [% of track]</div></div>
+      <div class="stat"><div class="v" id="yo-time">20.0</div><div class="l">seconds left</div></div>
+    </div>
+    <table class="scores" aria-label="Your best scores">
+      <thead><tr><th>Run type</th><th style="text-align:right">best RMS [%]</th></tr></thead>
+      <tbody id="yo-scores"></tbody>
+    </table>
+    <p class="note">Scores stay on this device only.</p>
+  </aside>
+</div>
+<div class="try"><h3>Try this order</h3><ol>
+  <li><b>Eyes open</b> twice. This is your closed-loop score.</li>
+  <li><b>Eyes closed</b>: the green dot disappears after the first second. You still see the target. Why does your error grow even though you know where the target is?</li>
+  <li><b>Delayed view</b>: you see the green dot 0.6 s late, like hot water still in the pipe. Try moving fast, then try moving calmly.</li>
+  <li><b>Unstable</b>: the dot runs away from your hand, like a stick balanced on your palm. You must keep catching it.</li>
+</ol></div>
+<details class="model"><summary>Model and numbers</summary>
+  <p>Positions are fractions of the track width. Eyes open, eyes closed and delayed view: <span class="eq">τ dc/dt = u + w − c</span> with τ = 0.25 s. Unstable: <span class="eq">dc/dt = λ (c − u) + 0.3 w</span> with λ = 1.2 s⁻¹, so the dot runs away from your hand unless you keep correcting. The target r is a sum of three slow sine waves (0.09–0.37 Hz), the disturbance w a sum of two. Score: root-mean-square of r − c over the 20 s run.</p>
+  <p>You are not an instant controller. Your simple visual reaction time is about 0.2 s (mean 231 ms in 1469 adults, Woods et al. 2015), and your screen and browser add a few tens of milliseconds. In continuous tracking, people adapt so that they and the machine together behave like an integrator with an effective delay of roughly 0.1–0.3 s (the crossover model of McRuer and Jex, 1967). The delay is why a very short stick cannot be balanced on the palm: the shortest balanceable stick grows with the square of the delay (Kovacs, Milton and Insperger, 2019).</p>
+  <p class="src">Sources: D. L. Woods et al., Front. Hum. Neurosci. 9 (2015) 131, <a href="https://doi.org/10.3389/fnhum.2015.00131" target="_blank" rel="noopener">doi:10.3389/fnhum.2015.00131</a>; D. T. McRuer, H. R. Jex, IEEE Trans. Human Factors in Electronics HFE-8 (1967) 231–249; B. A. Kovacs, J. Milton, T. Insperger, R. Soc. Open Sci. 6 (2019) 191006, <a href="https://doi.org/10.1098/rsos.191006" target="_blank" rel="noopener">doi:10.1098/rsos.191006</a>; balancing on one foot with eyes closed: Åström and Murray, <i>Feedback Systems</i>, 1st ed., Exercise 1.3.</p>
+</details>
+</section>
+
+<footer class="foot">ME 3001 · Karadeniz Technical University, Department of Mechanical Engineering. Models and parameter sources are listed under “Model and numbers” in each experiment. These are teaching models, simplified on purpose.</footer>
+</div>
+
+<script>
+"use strict";
+/* ---------- helpers ---------------------------------------------------- */
+const $ = id => document.getElementById(id);
+const tok = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+function niceStep(range, n){
+  const raw = range / n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+}
+function fitCanvas(cv){
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const w = Math.max(10, Math.round(r.width * dpr)), h = Math.max(10, Math.round(r.height * dpr));
+  if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return {ctx, w: r.width, h: r.height};
+}
+
+/* Strip chart: time on x, one y axis with units. series = [{pts:[[t,y]], color, label, dash, width}] */
+function drawStrip(cv, o){
+  const {ctx, w, h} = fitCanvas(cv);
+  const ink2 = tok("--ink2"), grid = tok("--grid"), muted = tok("--muted"), ink = tok("--ink");
+  ctx.clearRect(0, 0, w, h);
+  const L = 52, R = o.rightPad ?? 96, T = 14, B = 38;
+  const pw = w - L - R, ph = h - T - B;
+  const t1 = o.tEnd, t0 = t1 - o.window;
+  let ymin = o.ymin, ymax = o.ymax;
+  if (o.auto){
+    for (const s of o.series) for (const p of s.pts) if (p[0] >= t0){ ymin = Math.min(ymin, p[1]); ymax = Math.max(ymax, p[1]); }
+    const pad = (ymax - ymin) * 0.08; ymin -= pad; ymax += pad;
+    if (o.clamp){ ymin = Math.max(o.clamp[0], ymin); ymax = Math.min(o.clamp[1], ymax); }
+  }
+  const X = t => L + (t - t0) / o.window * pw;
+  const Y = y => T + (ymax - y) / (ymax - ymin) * ph;
+  ctx.font = "12px " + tok("--mono"); ctx.textBaseline = "middle";
+  // grid + y ticks
+  const ys = niceStep(ymax - ymin, 5);
+  ctx.strokeStyle = grid; ctx.lineWidth = 1; ctx.fillStyle = ink2; ctx.textAlign = "right";
+  for (let v = Math.ceil(ymin / ys) * ys; v <= ymax + 1e-9; v += ys){
+    const y = Y(v); ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(L + pw, y); ctx.stroke();
+    ctx.fillText((Math.abs(v) < 1e-9 ? 0 : +v.toFixed(ys < 1 ? 1 : 0)).toString(), L - 6, y);
+  }
+  // x ticks
+  const xs = niceStep(o.window, 6); ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (let v = Math.ceil(Math.max(0, t0) / xs) * xs; v <= t1 + 1e-9; v += xs){
+    const x = X(v); ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, T + ph); ctx.stroke();
+    ctx.fillText(v.toFixed(0), x, T + ph + 5);
+  }
+  ctx.fillStyle = muted; ctx.font = "12px " + tok("--sans");
+  ctx.fillText(o.xlabel || "time t [s]", L + pw / 2, T + ph + 20);
+  ctx.save(); ctx.translate(12, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = "middle";
+  ctx.fillText(o.ylabel, 0, 0); ctx.restore();
+  // shaded spans
+  for (const sp of o.spans || []){
+    const a = Math.max(X(sp[0]), L), b = Math.min(X(sp[1]), L + pw);
+    if (b > a){ ctx.fillStyle = tok("--surface2"); ctx.fillRect(a, T, b - a, ph); }
+  }
+  // reference lines
+  for (const rl of o.refs || []){
+    ctx.strokeStyle = rl.color || ink; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(L, Y(rl.y)); ctx.lineTo(L + pw, Y(rl.y)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = rl.color || ink; ctx.textAlign = "left"; ctx.textBaseline = "bottom"; ctx.font = "12px " + tok("--sans");
+    ctx.fillText(rl.label, L + 4, Y(rl.y) - 2);
+  }
+  // series
+  ctx.save(); ctx.beginPath(); ctx.rect(L, T, pw, ph); ctx.clip();
+  const ends = [];
+  for (const s of o.series){
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2.4; ctx.setLineDash(s.dash || []);
+    ctx.beginPath(); let started = false, last = null;
+    for (const p of s.pts){ if (p[0] < t0 - 1) continue; const x = X(p[0]), y = Y(p[1]);
+      if (!started){ ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y); last = p; }
+    ctx.stroke(); ctx.setLineDash([]);
+    if (last && s.label) ends.push({y: Y(last[1]), txt: s.label(last[1]), color: s.color});
+  }
+  ctx.restore();
+  // direct end labels, de-overlapped
+  ends.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 16) ends[i].y = ends[i - 1].y + 16;
+  ctx.font = "600 13px " + tok("--sans"); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  for (const e of ends){ ctx.fillStyle = e.color; ctx.fillText(e.txt, L + pw + 6, Math.min(Math.max(e.y, T + 6), T + ph)); }
+  ctx.strokeStyle = tok("--line"); ctx.lineWidth = 1; ctx.strokeRect(L + .5, T + .5, pw, ph);
+}
+
+/* ---------- tabs ------------------------------------------------------- */
+const labs = {};
+const tabs = [...document.querySelectorAll('nav.tabs [role="tab"]')];
+function showTab(id){
+  for (const b of tabs){ const on = b.getAttribute("aria-controls") === id;
+    b.setAttribute("aria-selected", on); $(b.getAttribute("aria-controls")).hidden = !on; }
+  for (const k in labs) labs[k].active = (k === id);
+  if (labs[id] && labs[id].redraw) labs[id].redraw();
+  store.set("fl-tab", id);
+}
+tabs.forEach(b => b.addEventListener("click", () => { showTab(b.getAttribute("aria-controls")); history.replaceState(null, "", "#" + b.getAttribute("aria-controls")); }));
+tabs.forEach((b, i) => b.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight" || e.key === "ArrowLeft"){ const j = (i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length; tabs[j].focus(); tabs[j].click(); }
+}));
+
+/* ---------- main loop -------------------------------------------------- */
+let lastTs = null;
+function frame(ts){
+  const dtReal = lastTs === null ? 0 : Math.min(0.1, (ts - lastTs) / 1000); lastTs = ts;
+  for (const k in labs){ const L = labs[k]; if (L.active && L.step) L.step(dtReal); }
+  requestAnimationFrame(frame);
+}
+window.addEventListener("resize", () => { for (const k in labs) if (labs[k].active && labs[k].redraw) labs[k].redraw(); });
+if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { for (const k in labs) labs[k].redraw && labs[k].redraw(); });
+new MutationObserver(() => { for (const k in labs) labs[k].redraw && labs[k].redraw(); }).observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme"]});
+
+/* ============================================================ 1 CRUISE */
+(() => {
+  const m = 1000, b0 = 50, g = 9.81, r = 25, KMH = 3.6, DT = 0.01, SPEED = 5, WIN = 160;
+  const el = {grade: $("cr-grade"), drag: $("cr-drag"), K: $("cr-K"), lag: $("cr-lag")};
+  let S;
+  function reset(){
+    S = {t: 0, vo: r, vc: r, Fo: b0 * r, Fc: b0 * r, buf: [], po: [[0, r * KMH]], pc: [[0, r * KMH]], spans: [], acc: 0};
+  }
+  reset();
+  const P = () => ({grade: +el.grade.value / 100, b: b0 * (1 + +el.drag.value / 100), K: +el.K.value, lag: el.lag.checked});
+  function simStep(p){
+    const nd = Math.round(0.4 / DT);
+    S.buf.push(S.vc); if (S.buf.length > nd + 1) S.buf.shift();
+    const vm = p.lag ? S.buf[0] : S.vc;
+    const cmdO = b0 * r, cmdC = b0 * r + p.K * (r - vm);
+    if (p.lag){ S.Fo += DT * (cmdO - S.Fo) / 1.0; S.Fc += DT * (cmdC - S.Fc) / 1.0; }
+    else { S.Fo = cmdO; S.Fc = cmdC; }
+    const Fw = m * g * p.grade;
+    S.vo += DT * (-p.b * S.vo + S.Fo - Fw) / m;
+    S.vc += DT * (-p.b * S.vc + S.Fc - Fw) / m;
+    S.vc = Math.max(-20, Math.min(80, S.vc)); // keep an unstable run on the chart
+    S.t += DT;
+  }
+  function step(dtReal){
+    const p = P(); S.acc += dtReal * SPEED;
+    while (S.acc >= DT){ simStep(p); S.acc -= DT;
+      if (Math.round(S.t / DT) % 10 === 0){ S.po.push([S.t, S.vo * KMH]); S.pc.push([S.t, S.vc * KMH]); } }
+    const cut = S.t - WIN - 2; while (S.po.length && S.po[0][0] < cut){ S.po.shift(); S.pc.shift(); }
+    if (p.grade !== 0){ const sp = S.spans[S.spans.length - 1]; if (sp && sp.open) sp[1] = S.t; else { const n = [S.t, S.t]; n.open = true; S.spans.push(n); } }
+    else if (S.spans.length) S.spans[S.spans.length - 1].open = false;
+    draw(p);
+  }
+  function draw(p){
+    p = p || P();
+    drawStrip($("cr-plot"), {tEnd: Math.max(WIN, S.t), window: WIN, ymin: 60, ymax: 100, auto: true, clamp: [0, 250],
+      ylabel: "speed c [km/h]", spans: S.spans,
+      refs: [{y: 90, label: "set speed r = 90 km/h", color: tok("--sig-r")}],
+      series: [{pts: S.po, color: tok("--s-open"), label: v => "open " + v.toFixed(1)},
+               {pts: S.pc, color: tok("--s-closed"), label: v => "closed " + v.toFixed(1)}]});
+    const vo = (b0 * r - m * g * p.grade) / p.b, vc = ((b0 + p.K) * r - m * g * p.grade) / (p.b + p.K);
+    $("cr-ss-o").textContent = (vo * KMH).toFixed(1);
+    $("cr-ss-c").textContent = (vc * KMH).toFixed(1);
+    $("cr-ss-note").textContent = p.lag
+      ? "Steady values hold only if the loop settles. With lag, a large K makes it oscillate instead."
+      : "Steady values from setting dv/dt = 0: loop gain (b + K)/b = " + ((p.b + p.K) / p.b).toFixed(1) + ".";
+    const e = r - S.vc, Fw = m * g * p.grade;
+    $("cr-chips").innerHTML =
+      chip("--sig-r", "r", (r * KMH).toFixed(0) + " km/h") + chip("--sig-e", "e", (e * KMH).toFixed(1) + " km/h") +
+      chip("--sig-u", "u", (S.Fc / 1000).toFixed(2) + " kN") + chip("--sig-w", "w", (Fw / 1000).toFixed(2) + " kN") +
+      chip("--sig-c", "c", (S.vc * KMH).toFixed(1) + " km/h") + '<span class="chip">blue car signals</span>';
+  }
+  function out(){
+    $("cr-grade-o").textContent = (+el.grade.value).toFixed(1).replace(".0", "") + " %";
+    $("cr-drag-o").textContent = (el.drag.value >= 0 ? "+" : "") + el.drag.value + " %";
+    $("cr-K-o").textContent = el.K.value + " N·s/m";
+    const on = +el.grade.value === 3; $("cr-hill").setAttribute("aria-pressed", on);
+    $("cr-hill").textContent = on ? "Back to flat road" : "Start 3 % hill";
+  }
+  for (const k in el) el[k].addEventListener("input", () => { out(); draw(); });
+  $("cr-hill").addEventListener("click", () => { el.grade.value = (+el.grade.value === 3) ? 0 : 3; out(); });
+  $("cr-reset").addEventListener("click", () => { el.grade.value = 0; el.drag.value = 0; el.K.value = 500; el.lag.checked = false; reset(); out(); draw(); });
+  out();
+  labs.cruise = {active: true, step, redraw: () => draw()};
+})();
+function chip(c, sym, val){ return `<span class="chip" style="--c:var(${c})"><em>${sym}</em> = ${val}</span>`; }
+
+function verdict(el, color, txt){ el.className = "verdict"; el.style.setProperty("--vc", `var(${color})`); el.textContent = txt; }
+
+/* ============================================================ 2 SHOWER */
+(() => {
+  const TH = 55, TC = 12, TREF = 38, VPIPE = 0.366, DT = 0.02, WIN = 90, FLUSH = 8;
+  const el = {kappa: $("sh-kappa"), valve: $("sh-valve"), flow: $("sh-flow")};
+  let who = "auto", S;
+  const Tmix = (x, flush) => { const qh = x, qc = (1 - x) * (flush ? 0.6 : 1); return (qh * TH + qc * TC) / Math.max(1e-6, qh + qc); };
+  function reset(){
+    const x0 = 0.3, T0 = Tmix(x0, false);
+    S = {t: 0, x: x0, hist: [[-20, T0], [0, T0]], ps: [[0, T0]], pm: [[0, T0]], flushT: -99, acc: 0};
+    if (who === "you") el.valve.value = 30;
+  }
+  const delay = () => VPIPE / (+el.flow.value / 60);
+  function skin(t){ const h = S.hist, tt = t - delay();
+    for (let i = h.length - 1; i >= 0; i--) if (h[i][0] <= tt) return h[i][1]; return h[0][1]; }
+  function simStep(){
+    const flush = S.t >= S.flushT && S.t < S.flushT + FLUSH;
+    if (who === "you") S.x = +el.valve.value / 100;
+    const Tm = Tmix(S.x, flush); S.hist.push([S.t, Tm]);
+    while (S.hist.length > 2 && S.hist[1][0] < S.t - 12) S.hist.shift();
+    const Ts = skin(S.t);
+    if (who === "auto") S.x = Math.min(1, Math.max(0, S.x - DT * (+el.kappa.value / 100) * (Ts - TREF)));
+    S.t += DT;
+    if (Math.round(S.t / DT) % 5 === 0){ S.ps.push([S.t, Ts]); S.pm.push([S.t, Tm]); }
+    const cut = S.t - WIN - 2; while (S.ps.length && S.ps[0][0] < cut){ S.ps.shift(); S.pm.shift(); }
+    return {Tm, Ts, flush};
+  }
+  let last = {Tm: 0, Ts: 0, flush: false};
+  function step(dt){ S.acc += dt; while (S.acc >= DT){ last = simStep(); S.acc -= DT; } draw(); }
+  function draw(){
+    const L = delay(), a = (+el.kappa.value / 100) * (TH - TC), aL = a * L;
+    const fl = S.flushT >= 0 ? [[S.flushT, S.flushT + FLUSH]] : [];
+    drawStrip($("sh-plot"), {tEnd: Math.max(WIN, S.t), window: WIN, ymin: 20, ymax: 50, auto: true, clamp: [5, 60],
+      ylabel: "temperature [°C]", spans: fl,
+      refs: [{y: TREF, label: "wanted r = 38 °C", color: tok("--sig-r")}],
+      series: [{pts: S.pm, color: tok("--sig-u"), width: 1.6, dash: [5, 4], label: v => "valve " + v.toFixed(1)},
+               {pts: S.ps, color: tok("--sig-c"), label: v => "skin " + v.toFixed(1)}]});
+    $("sh-L").textContent = L.toFixed(1) + " s";
+    $("sh-aL").textContent = who === "auto" ? aL.toFixed(2) : "you";
+    const v = $("sh-verdict");
+    if (who === "you") verdict(v, "--sig-r", "You are the controller. Your own impatience sets the loop gain.");
+    else if (aL < 1 / Math.E) verdict(v, "--sig-c", "aL < 1/e = 0.37: the temperature creeps to 38 °C without overshoot.");
+    else if (aL < Math.PI / 2) verdict(v, "--ask-bar", "1/e < aL < π/2: it overshoots, and the oscillation dies out.");
+    else verdict(v, "--warn-bar", "aL > π/2: the oscillation grows until the valve hits its end stops.");
+    $("sh-chips").innerHTML = chip("--sig-r", "r", TREF + " °C") + chip("--sig-e", "e", (TREF - last.Ts).toFixed(1) + " °C") +
+      chip("--sig-u", "u", "valve " + (S.x * 100).toFixed(0) + " % hot") + chip("--sig-w", "w", last.flush ? "flush: cold flow −40 %" : "none") +
+      chip("--sig-c", "c", last.Ts.toFixed(1) + " °C on skin");
+  }
+  function out(){
+    $("sh-kappa-o").textContent = (+el.kappa.value).toFixed(1) + " %/s per °C";
+    $("sh-valve-o").textContent = el.valve.value + " %";
+    $("sh-flow-o").textContent = (+el.flow.value).toFixed(1) + " L/min";
+  }
+  for (const k in el) el[k].addEventListener("input", () => { out(); draw(); });
+  $("sh-start").addEventListener("click", () => { reset(); draw(); });
+  $("sh-flush").addEventListener("click", () => { S.flushT = S.t; });
+  document.querySelectorAll("#sh-who button").forEach(b => b.addEventListener("click", () => {
+    who = b.dataset.w; document.querySelectorAll("#sh-who button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    $("sh-kappa-box").hidden = who !== "auto"; $("sh-valve-box").hidden = who !== "you";
+    if (who === "you") el.valve.value = Math.round(S.x * 100); out(); draw(); }));
+  reset(); out();
+  labs.shower = {active: false, step, redraw: draw};
+})();
+
+/* ============================================================ 3 GOVERNOR */
+(() => {
+  const g = 9.81, l = 0.3, m = 1, J = 20, F0 = 100, K = F0 / Math.cos(50 * Math.PI / 180), DT = 0.002, WIN = 40;
+  const RPM = 60 / (2 * Math.PI), PMIN = 5 * Math.PI / 180, PMAX = 85 * Math.PI / 180;
+  const el = {F: $("gv-load"), b: $("gv-b")};
+  const w0 = F => Math.sqrt(g * K / (l * F));
+  let S;
+  function reset(){ S = {t: 0, ph: 50.3 * Math.PI / 180, dph: 0, w: w0(F0), acc: 0, pw: [[0, w0(F0) * RPM]], spans: []}; }
+  function simStep(){
+    const F = +el.F.value, b = +el.b.value;
+    const acc = S.w * S.w * Math.sin(S.ph) * Math.cos(S.ph) - (g / l) * Math.sin(S.ph) - (b / m) * S.dph;
+    S.dph += DT * acc; S.ph += DT * S.dph;
+    if (S.ph < PMIN){ S.ph = PMIN; S.dph = Math.max(0, S.dph); }
+    if (S.ph > PMAX){ S.ph = PMAX; S.dph = Math.min(0, S.dph); }
+    S.w += DT * (K * Math.cos(S.ph) - F) / J; S.w = Math.max(0, S.w);
+    S.t += DT;
+    if (Math.round(S.t / DT) % 25 === 0) S.pw.push([S.t, S.w * RPM]);
+    const cut = S.t - WIN - 2; while (S.pw.length && S.pw[0][0] < cut) S.pw.shift();
+  }
+  function step(dt){ S.acc += dt; while (S.acc >= DT){ simStep(); S.acc -= DT; } draw(); }
+  function drawPic(){
+    const {ctx, w, h} = fitCanvas($("gv-pic")); ctx.clearRect(0, 0, w, h);
+    const ink = tok("--ink"), ink2 = tok("--ink2"), navy = tok("--navy");
+    const cx = w / 2, top = 34, arm = Math.min(w * 0.36, h * 0.32);
+    const bx = arm * Math.sin(S.ph), by = arm * Math.cos(S.ph);
+    // spindle
+    ctx.strokeStyle = ink2; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(cx, top - 14); ctx.lineTo(cx, top + arm * 1.9); ctx.stroke();
+    // sleeve: links from balls to sleeve, sleeve height rises as the balls fly out
+    const sy = top + 2 * by * 0.95;
+    ctx.lineWidth = 2.5; ctx.strokeStyle = navy;
+    for (const sg of [-1, 1]){ ctx.beginPath(); ctx.moveTo(cx, top); ctx.lineTo(cx + sg * bx, top + by); ctx.lineTo(cx, sy); ctx.stroke(); }
+    ctx.fillStyle = navy; ctx.fillRect(cx - 12, sy - 7, 24, 14);
+    for (const sg of [-1, 1]){ ctx.beginPath(); ctx.arc(cx + sg * bx, top + by, 13, 0, 6.283); ctx.fillStyle = tok("--sig-b"); ctx.fill(); }
+    ctx.beginPath(); ctx.arc(cx, top, 5, 0, 6.283); ctx.fillStyle = ink; ctx.fill();
+    // valve: opening proportional to cos(phi)
+    const open = Math.cos(S.ph), vy = h - 44, vw = w * 0.7;
+    ctx.fillStyle = tok("--surface2"); ctx.fillRect(cx - vw / 2, vy, vw, 16);
+    ctx.fillStyle = tok("--sig-u"); ctx.fillRect(cx - vw / 2, vy, vw * open, 16);
+    ctx.strokeStyle = tok("--line"); ctx.lineWidth = 1; ctx.strokeRect(cx - vw / 2 + .5, vy + .5, vw, 16);
+    ctx.setLineDash([4, 4]); ctx.strokeStyle = ink2; ctx.beginPath(); ctx.moveTo(cx + 14, sy); ctx.lineTo(cx + vw / 2 - 4, sy); ctx.lineTo(cx + vw / 2 - 4, vy); ctx.stroke(); ctx.setLineDash([]);
+    ctx.font = "12px " + tok("--sans"); ctx.fillStyle = ink2; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.fillText("steam valve " + (open * 100).toFixed(0) + " % open", cx, vy + 20);
+    ctx.textBaseline = "bottom"; ctx.fillText("arm angle φ = " + (S.ph * 180 / Math.PI).toFixed(1) + "°", cx, top - 16);
+  }
+  function draw(){
+    const F = +el.F.value, b = +el.b.value, we = w0(F), vy = b * J * we / (2 * m * F);
+    drawStrip($("gv-plot"), {tEnd: Math.max(WIN, S.t), window: WIN, ymin: 58, ymax: 72, auto: true, clamp: [0, 150],
+      ylabel: "engine speed c [rpm]", rightPad: 84,
+      refs: [{y: w0(F0) * RPM, label: "68.1 rpm at F = 100 N·m", color: tok("--sig-r")}],
+      series: [{pts: S.pw, color: tok("--sig-c"), label: v => v.toFixed(1) + " rpm"}]});
+    drawPic();
+    $("gv-ss").textContent = (we * RPM).toFixed(1);
+    $("gv-vy").textContent = vy.toFixed(2);
+    const v = $("gv-verdict");
+    if (vy > 1.15) verdict(v, "--sig-c", Math.abs(F - F0) < 1 ? "Stable. At the design load the engine runs at 68.1 rpm." : "Stable. The steady speed is " + Math.abs((we / w0(F0) - 1) * 100).toFixed(1) + " % " + (F > F0 ? "below" : "above") + " 68.1 rpm: this offset is the droop.");
+    else if (vy > 1) verdict(v, "--ask-bar", "Only just stable: expect long, slowly dying oscillations.");
+    else verdict(v, "--warn-bar", "Friction too low for this load: the governor hunts (a sustained oscillation).");
+    $("gv-chips").innerHTML = chip("--sig-w", "w", "load " + F + " N·m") + chip("--sig-u", "u", "steam " + (K * Math.cos(S.ph)).toFixed(0) + " N·m") +
+      chip("--sig-c", "c", (S.w * RPM).toFixed(1) + " rpm") + '<span class="chip">sensor + controller: flyballs and linkage</span>';
+  }
+  function out(){
+    $("gv-load-o").textContent = el.F.value + " N·m"; $("gv-b-o").textContent = (+el.b.value).toFixed(1) + " kg/s";
+    const up = +el.F.value > F0; $("gv-step").setAttribute("aria-pressed", up); $("gv-step").textContent = up ? "Back to 100 N·m" : "Add 20 % load";
+  }
+  for (const k in el) el[k].addEventListener("input", () => { out(); draw(); });
+  $("gv-step").addEventListener("click", () => { el.F.value = (+el.F.value > F0) ? F0 : 120; out(); });
+  $("gv-reset").addEventListener("click", () => { el.F.value = F0; el.b.value = 4; reset(); out(); draw(); });
+  reset(); out();
+  labs.governor = {active: false, step, redraw: draw};
+})();
+
+/* ============================================================ 4 YOU */
+(() => {
+  const DUR = 20, DT = 1 / 120, TAU = 0.25, LAM = 1.2, DELAY = 0.6;
+  const desc = {
+    fb: "You see the output. This is closed-loop control with you as the controller.",
+    ol: "The green dot hides after 1 s. You still see the target, but not the result of your action: open loop.",
+    delay: "You see the green dot 0.6 s late. The feedback path now has a transport delay.",
+    unst: "The dot moves away from your hand at a rate proportional to the gap. Only feedback keeps it on the track."
+  };
+  const names = {fb: "Eyes open", ol: "Eyes closed", delay: "Delayed view", unst: "Unstable"};
+  let mode = "fb", G = null, u = 0.5, keys = 0;
+  const best = store.get("fl-best", {});
+  const cv = $("yo-track");
+  function target(t, ph){ return 0.5 + 0.26 * Math.sin(0.55 * t + ph[0]) + 0.12 * Math.sin(1.3 * t + ph[1]) + 0.05 * Math.sin(2.3 * t + ph[2]); }
+  function dist(t, ph){ return 0.16 * Math.sin(0.35 * t + ph[3]) + 0.08 * Math.sin(0.9 * t + ph[4]); }
+  function start(){
+    const ph = Array.from({length: 5}, () => Math.random() * 6.283);
+    G = {t: 0, y: target(0, ph), ph, acc: 0, se: 0, n: 0, hist: [], pr: [], py: [], done: false};
+    u = G.y; $("yo-start").textContent = "Restart run"; cv.focus({preventScroll: true});
+  }
+  function simStep(){
+    const t = G.t, w = dist(t, G.ph);
+    if (keys) u = Math.min(1, Math.max(0, u + keys * 0.9 * DT));
+    if (mode === "unst"){ G.y += DT * (LAM * (G.y - u) + 0.3 * w); }       // unstable: dc/dt = λ(c − u) + small push
+    else { G.y += DT * ((u + w) - G.y) / TAU; }                            // stable:   τ dc/dt = u + w − c
+    G.y = Math.min(1.15, Math.max(-0.15, G.y));
+    G.hist.push([t, G.y]); if (G.hist.length > 400) G.hist.shift();
+    const r = target(t, G.ph), e = r - G.y; G.se += e * e; G.n++;
+    if (G.n % 6 === 0){ G.pr.push([t, r * 100]); G.py.push([t, G.y * 100]); }
+    G.t += DT;
+    if (G.t >= DUR){ G.done = true; const rms = Math.sqrt(G.se / G.n) * 100;
+      if (!(best[mode] <= rms)) best[mode] = +rms.toFixed(1); store.set("fl-best", best); scores(); }
+  }
+  function shownY(){
+    if (!G) return null;
+    if (mode === "ol" && G.t > 1) return null;
+    if (mode === "delay"){ const tt = G.t - DELAY; if (tt < 0) return G.hist[0] ? G.hist[0][1] : G.y;
+      for (let i = G.hist.length - 1; i >= 0; i--) if (G.hist[i][0] <= tt) return G.hist[i][1]; return G.hist[0][1]; }
+    return G.y;
+  }
+  function drawTrack(){
+    const {ctx, w, h} = fitCanvas(cv); ctx.clearRect(0, 0, w, h);
+    const pad = 24, X = v => pad + v * (w - 2 * pad);
+    ctx.fillStyle = tok("--surface2"); ctx.fillRect(pad, h / 2 - 3, w - 2 * pad, 6);
+    const running = G && !G.done;
+    const r = G ? target(Math.min(G.t, DUR), G.ph) : 0.5;
+    // target
+    ctx.strokeStyle = tok("--sig-r"); ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(X(r), h / 2, 22, 0, 6.283); ctx.stroke();
+    ctx.fillStyle = tok("--sig-r"); ctx.font = "600 13px " + tok("--sans"); ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    ctx.fillText("target r", X(r), h / 2 - 28);
+    // output
+    const ys = G ? shownY() : 0.5;
+    if (ys !== null){ ctx.fillStyle = tok("--sig-c"); ctx.beginPath(); ctx.arc(X(ys), h / 2, 11, 0, 6.283); ctx.fill();
+      ctx.textBaseline = "top"; ctx.fillText(mode === "delay" && running ? "c (0.6 s ago)" : "output c", X(ys), h / 2 + 26); }
+    else { ctx.fillStyle = tok("--muted"); ctx.textBaseline = "top"; ctx.fillText("output hidden", X(r), h / 2 + 30); }
+    // hand
+    ctx.fillStyle = tok("--sig-u"); ctx.beginPath(); ctx.moveTo(X(u), h - 44); ctx.lineTo(X(u) - 10, h - 26); ctx.lineTo(X(u) + 10, h - 26); ctx.closePath(); ctx.fill();
+    ctx.textBaseline = "top"; ctx.fillText("your hand u", X(u), h - 22);
+    if (!running){ ctx.fillStyle = tok("--ink2"); ctx.font = "600 17px " + tok("--cond"); ctx.textBaseline = "top";
+      const narrow = w < 560;
+      ctx.fillText(G && G.done ? (narrow ? "Run finished." : "Run finished. Pick a run type and start again.") : (narrow ? "Press Start, then drag here" : "Press “Start 20 s run”, then drag here or use ← →"), w / 2, 12); }
+  }
+  function drawPlot(){
+    const tEnd = G ? Math.max(DUR, 0) : DUR;
+    drawStrip($("yo-plot"), {tEnd, window: DUR, ymin: -10, ymax: 110, ylabel: "position [%]", rightPad: 70,
+      series: G ? [{pts: G.pr, color: tok("--sig-r"), label: () => "r"}, {pts: G.py, color: tok("--sig-c"), label: () => "c"}] : []});
+  }
+  function step(dtReal){
+    if (G && !G.done){ G.acc += dtReal; while (G.acc >= DT && !G.done){ simStep(); G.acc -= DT; }
+      $("yo-time").textContent = Math.max(0, DUR - G.t).toFixed(1);
+      $("yo-rms").textContent = (Math.sqrt(G.se / Math.max(1, G.n)) * 100).toFixed(1); }
+    drawTrack(); if (G && (G.n % 12 === 0 || G.done)) drawPlot();
+  }
+  function scores(){
+    $("yo-scores").innerHTML = Object.keys(names).map(k => `<tr><td>${names[k]}</td><td class="n">${best[k] != null ? best[k].toFixed(1) : "–"}</td></tr>`).join("");
+  }
+  function setU(e){ const rc = cv.getBoundingClientRect(); u = Math.min(1, Math.max(0, (e.clientX - rc.left - 24) / (rc.width - 48))); }
+  cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); setU(e); });
+  cv.addEventListener("pointermove", e => { if (e.buttons || e.pointerType === "mouse") setU(e); });
+  cv.addEventListener("keydown", e => { if (e.key === "ArrowLeft"){ keys = -1; e.preventDefault(); } if (e.key === "ArrowRight"){ keys = 1; e.preventDefault(); } });
+  cv.addEventListener("keyup", e => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") keys = 0; });
+  document.querySelectorAll("#yo-mode button").forEach(b => b.addEventListener("click", () => {
+    mode = b.dataset.m; document.querySelectorAll("#yo-mode button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    $("yo-desc").textContent = desc[mode]; G = null; $("yo-rms").textContent = "–"; $("yo-time").textContent = DUR.toFixed(1);
+    $("yo-start").textContent = "Start 20 s run"; drawPlot(); }));
+  $("yo-start").addEventListener("click", start);
+  scores();
+  labs.you = {active: false, step, redraw: () => { drawTrack(); drawPlot(); }};
+})();
+
+/* ---------- boot ------------------------------------------------------- */
+const initial = (location.hash || "").slice(1);
+const saved = store.get("fl-tab", "cruise");
+showTab(labs[initial] ? initial : (labs[saved] ? saved : "cruise"));
+requestAnimationFrame(frame);
+</script>
+
+</body>
+</html>
