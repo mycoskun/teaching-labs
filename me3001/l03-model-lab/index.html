@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ME 3001 Model Lab</title>
+<meta name="description" content="Four browser experiments for ME 3001 Lecture 3: linearization of the pendulum, across and through variables, a machine and its equivalent circuit, and an impedance trainer.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<style>
+[hidden]{display:none!important}
+/* Same design system as the Lecture 1 Feedback Lab (course tokens, navy + one orange accent).
+   Layout: header, tab strip, per tab a plot column and a 330 px control panel, then "predict first" and "model and numbers". */
+:root{
+  --ground:#F3F5F8; --surface:#FFFFFF; --surface2:#E9EDF3; --line:#D3D9E2;
+  --ink:#1B2533; --ink2:#4A5568; --muted:#7A8599;
+  --navy:#14213D; --accent:#E8590C; --accent-soft:#FFF1E8;
+  --sig-r:#2A78D6; --sig-e:#E34948; --sig-u:#B87A00; --sig-c:#008300; --sig-w:#4A3AA7; --sig-b:#4A5568;
+  --s-open:#EB6834; --s-closed:#2A78D6;
+  --ask-bg:#FFF7E0; --ask-bar:#C98500; --key-bg:#EAF2FB; --warn-bg:#FDECEC; --warn-bar:#C92A2A;
+  --grid:#E3E7EC;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  --cond:"IBM Plex Sans Condensed","Segoe UI Semibold","Arial Narrow",sans-serif;
+  --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#0D1422; --surface:#151F33; --surface2:#1D2A42; --line:#2C3A55;
+    --ink:#E6EBF3; --ink2:#B4BFD0; --muted:#8793A8;
+    --navy:#9FB3D1; --accent:#FF7A33; --accent-soft:#3A2416;
+    --sig-r:#5B9DF0; --sig-e:#FF6B6A; --sig-u:#E5AE3A; --sig-c:#3CC25A; --sig-w:#9B8CF0; --sig-b:#A0AEC0;
+    --s-open:#FF8A57; --s-closed:#5B9DF0;
+    --ask-bg:#33290F; --ask-bar:#E5AE3A; --key-bg:#16284A; --warn-bg:#3A1A1C; --warn-bar:#FF6B6A;
+    --grid:#223049;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#0D1422; --surface:#151F33; --surface2:#1D2A42; --line:#2C3A55;
+  --ink:#E6EBF3; --ink2:#B4BFD0; --muted:#8793A8;
+  --navy:#9FB3D1; --accent:#FF7A33; --accent-soft:#3A2416;
+  --sig-r:#5B9DF0; --sig-e:#FF6B6A; --sig-u:#E5AE3A; --sig-c:#3CC25A; --sig-w:#9B8CF0; --sig-b:#A0AEC0;
+  --s-open:#FF8A57; --s-closed:#5B9DF0;
+  --ask-bg:#33290F; --ask-bar:#E5AE3A; --key-bg:#16284A; --warn-bg:#3A1A1C; --warn-bar:#FF6B6A;
+  --grid:#223049;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:clamp(16px,3vw,32px);padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;border-bottom:2px solid var(--navy);padding-bottom:12px}
+.course{font-family:var(--cond);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--cond);font-weight:600;font-size:clamp(28px,4vw,40px);line-height:1.1;margin:2px 0 0;color:var(--navy);text-wrap:balance}
+.lede{color:var(--ink2);max-width:60ch;margin:6px 0 0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:18px;height:3px;border-radius:2px;display:inline-block}
+nav.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 16px}
+nav.tabs button{font:600 15px/1.2 var(--sans);color:var(--ink2);background:transparent;border:1px solid var(--line);border-radius:6px;padding:9px 14px;cursor:pointer;display:flex;gap:8px;align-items:baseline}
+nav.tabs button b{font-family:var(--mono);font-weight:600;color:var(--muted)}
+nav.tabs button[aria-selected="true"]{background:var(--navy);color:var(--ground);border-color:var(--navy)}
+nav.tabs button[aria-selected="true"] b{color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,canvas:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px}
+@media (max-width:880px){.lab{grid-template-columns:minmax(0,1fr)}}
+.lab h2{font-family:var(--cond);font-weight:600;font-size:26px;line-height:1.15;margin:0 0 4px;color:var(--navy);text-wrap:balance}
+.lab .claim{color:var(--ink2);margin:0 0 12px;max-width:68ch}
+.plot{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 10px 6px}
+.plot canvas{display:block;width:100%;height:340px;touch-action:none}
+.plot.tall canvas{height:380px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-family:var(--mono);font-size:13.5px;padding:4px 9px;border-radius:5px;background:var(--surface2);color:var(--ink);font-variant-numeric:tabular-nums;border-left:3px solid var(--c,var(--line))}
+.chip em{font-style:italic;font-family:Cambria,Georgia,serif;font-size:15px;color:var(--c,var(--ink))}
+aside.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:14px;align-self:start}
+.ctl label{display:flex;justify-content:space-between;gap:8px;font-size:14px;font-weight:500;color:var(--ink)}
+.ctl label output{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink2)}
+.ctl small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:2px}
+input[type=range]{width:100%;accent-color:var(--accent);margin:6px 0 0}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:600 14px/1.2 var(--sans);border-radius:6px;padding:9px 12px;cursor:pointer;border:1px solid var(--line);background:var(--surface2);color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:var(--ground)}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{flex:1;font:600 13.5px/1.2 var(--sans);padding:8px 6px;border:0;background:transparent;color:var(--ink2);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--navy);color:var(--ground)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--surface2);border-radius:6px;padding:8px 10px}
+.stat .v{font-family:var(--mono);font-weight:600;font-size:22px;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat .l{font-size:12.5px;color:var(--ink2);line-height:1.3}
+.try{background:var(--ask-bg);border-left:4px solid var(--ask-bar);border-radius:0 6px 6px 0;padding:10px 14px;margin-top:14px}
+.try h3,.model h3{font:600 12.5px/1.2 var(--cond);letter-spacing:.12em;text-transform:uppercase;margin:0 0 6px;color:var(--ask-bar)}
+.try ol{margin:0;padding-left:1.3em}
+.try li{margin:3px 0}
+details.model{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 14px}
+details.model summary{cursor:pointer;font-weight:600;color:var(--navy)}
+details.model p,details.model li{font-size:14.5px;color:var(--ink2);max-width:80ch}
+.eq{font-family:Cambria,"Cambria Math",Georgia,serif;font-style:italic;font-size:17px;color:var(--ink);background:var(--surface2);padding:6px 10px;border-radius:4px;display:inline-block;margin:2px 0;overflow-x:auto;max-width:100%}
+.src{font-size:13px;color:var(--muted)}
+.src a{color:var(--sig-r)}
+.note{font-size:13px;color:var(--muted)}
+.warnbox{background:var(--warn-bg);border-left:4px solid var(--warn-bar);padding:8px 12px;border-radius:0 6px 6px 0;font-size:14px}
+table.scores{width:100%;border-collapse:collapse;font-size:14px}
+table.scores th,table.scores td{text-align:left;padding:5px 4px;border-bottom:1px solid var(--line)}
+table.scores td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+footer.foot{margin-top:28px;border-top:1px solid var(--line);padding-top:12px;font-size:13px;color:var(--muted)}
+.game canvas{height:260px;cursor:ew-resize}
+.game .plot + .plot{margin-top:10px}
+.game .plot.small canvas{height:170px;cursor:default}
+.gov-row{display:grid;grid-template-columns:230px minmax(0,1fr);gap:10px}
+.gov-row .gov-pic canvas{height:340px}
+@media (max-width:620px){.gov-row{grid-template-columns:minmax(0,1fr)}.gov-row .gov-pic canvas{height:240px}}
+.verdict{border-left:4px solid var(--vc,var(--line));padding:6px 10px;background:var(--surface2);border-radius:0 6px 6px 0;font-size:14px;color:var(--ink)}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
+.plot.short canvas{height:170px}
+.plot.mid canvas{height:250px}
+.plot.pic canvas{height:300px}
+.duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+@media (max-width:620px){.duo{grid-template-columns:minmax(0,1fr)}}
+.stack{display:flex;flex-direction:column;gap:10px}
+.map{width:100%;border-collapse:collapse;font-size:14px}
+.map th,.map td{text-align:left;padding:4px 4px;border-bottom:1px solid var(--line)}
+.map td.m{font-family:Cambria,"Cambria Math",Georgia,serif;font-style:italic}
+.quiz-q{font-size:16px;color:var(--ink);margin:0 0 10px;max-width:68ch}
+.choices{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+@media (max-width:620px){.choices{grid-template-columns:minmax(0,1fr)}}
+.choices button{font-family:Cambria,"Cambria Math",Georgia,serif;font-style:italic;font-size:17px;text-align:left;padding:10px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.choices button[data-state="right"]{background:var(--key-bg);border-color:var(--sig-c);box-shadow:inset 4px 0 0 var(--sig-c)}
+.choices button[data-state="wrong"]{background:var(--warn-bg);border-color:var(--warn-bar);box-shadow:inset 4px 0 0 var(--warn-bar)}
+.choices button:disabled{cursor:default}
+.progress{font-family:var(--mono);font-size:13px;color:var(--ink2)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<p style="margin:0 0 8px;font-size:14px"><a href="../../" style="color:var(--sig-r)">&larr; All course labs</a></p>
+<header class="top">
+  <div>
+    <div class="course">ME 3001 System Dynamics and Control · Lecture 3</div>
+    <h1>Model lab</h1>
+    <p class="lede">Four experiments for the modelling week. Predict first, then move the sliders. Impedance here is across over through: for a machine, velocity over force.</p>
+  </div>
+  <div class="legend" aria-label="Line colours">
+    <span><i style="background:var(--s-closed)"></i>nonlinear / mechanical</span>
+    <span><i style="background:var(--s-open)"></i>linear / electrical</span>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Experiments">
+  <button role="tab" id="tab-lin" aria-controls="lin" aria-selected="true"><b>1</b>Linearize</button>
+  <button role="tab" id="tab-at" aria-controls="at" aria-selected="false"><b>2</b>Across and through</button>
+  <button role="tab" id="tab-tw" aria-controls="tw" aria-selected="false"><b>3</b>Twins</button>
+  <button role="tab" id="tab-imp" aria-controls="imp" aria-selected="false"><b>4</b>Impedance</button>
+</nav>
+
+<!-- ============================================================ 1 LINEARIZE -->
+<section id="lin" role="tabpanel" aria-labelledby="tab-lin">
+<div class="lab">
+  <div class="stack">
+    <div>
+      <h2>A linear model is a tangent, and a tangent is only good nearby</h2>
+      <p class="claim">Top: the gravity torque of a pendulum, T/MgL = sin θ, and its tangent at the operating point θ̄. Shaded: where the linear model's deviation is within 5 % of the true deviation. Bottom: the same pendulum released from θ₀, simulated with sin θ (blue) and with the linear model θ (orange).</p>
+    </div>
+    <div class="plot mid"><canvas id="ln-torque" role="img" aria-label="Pendulum torque, its tangent at the operating point and the band where the linear model is within 5 percent"></canvas></div>
+    <div class="duo">
+      <div class="plot"><canvas id="ln-time" role="img" aria-label="Angle of the nonlinear and the linear pendulum over time"></canvas></div>
+      <div class="plot"><canvas id="ln-pic" role="img" aria-label="The two pendulums drawn swinging side by side"></canvas></div>
+    </div>
+    <div class="chips" id="ln-chips"></div>
+  </div>
+  <aside class="panel" aria-label="Linearization settings">
+    <div class="ctl"><label for="ln-op">Operating point θ̄ <output id="ln-op-o"></output></label>
+      <input type="range" id="ln-op" min="-180" max="180" step="5" value="0">
+      <div class="row" style="margin-top:6px"><button class="btn" id="ln-down">Hanging, 0°</button><button class="btn" id="ln-up">Upright, 180°</button></div></div>
+    <div class="ctl"><label for="ln-amp">Release angle θ₀ <output id="ln-amp-o"></output></label>
+      <input type="range" id="ln-amp" min="5" max="170" step="5" value="60">
+      <small>Both pendulums start at rest from θ₀. The linear model is the one about the hanging position.</small></div>
+    <div class="ctl"><label for="ln-L">Length L <output id="ln-L-o"></output></label>
+      <input type="range" id="ln-L" min="0.25" max="2" step="0.05" value="1"></div>
+    <div class="row"><button class="btn primary" id="ln-go">Release again</button></div>
+    <div class="stats">
+      <div class="stat"><div class="v" id="ln-T0">2.006</div><div class="l">linear period T₀ [s]</div></div>
+      <div class="stat"><div class="v" id="ln-T" style="color:var(--s-closed)">–</div><div class="l">true period T [s] (measured)</div></div>
+      <div class="stat"><div class="v" id="ln-ratio">–</div><div class="l">T / T₀</div></div>
+      <div class="stat"><div class="v" id="ln-theory">1.073</div><div class="l">T / T₀ from theory</div></div>
+    </div>
+    <div class="verdict" id="ln-verdict"></div>
+  </aside>
+</div>
+<div class="try"><h3>Predict first, then try</h3><ol>
+  <li>From 60°, will the true period be equal to T₀, 2 % longer, 7 % longer or 20 % longer? Then press <b>Release again</b>.</li>
+  <li>How small must θ₀ be before the two curves stay together for the whole window?</li>
+  <li>Move θ̄ to 90°. Why does the shaded band disappear?</li>
+  <li>Press <b>Upright, 180°</b>. What is the sign of the slope, and what does it mean for the pendulum?</li>
+</ol></div>
+<details class="model"><summary>Model and numbers</summary>
+  <p><span class="eq">ML² θ̈ = T<sub>c</sub> − MgL sin θ</span> &nbsp; linearized about θ̄: <span class="eq">T ≈ MgL [sin θ̄ + cos θ̄ (θ − θ̄)]</span></p>
+  <p>Deviation error in the top plot: |ΔT − ΔT<sub>lin</sub>| / |ΔT| with ΔT = T − T̄. At θ̄ = 0 this is (θ − sin θ)/sin θ: 4.7 % at 30°, 5 % at 30.8°, 11.1 % at 45°. At θ̄ = 90° the slope is zero and the linear model keeps no deviation at all.</p>
+  <p>The time response is integrated with fourth-order Runge–Kutta (step 2 ms). The theoretical period is T/T₀ = 2K(k)/π with k = sin(θ₀/2), K the complete elliptic integral of the first kind (computed here with the arithmetic-geometric mean): 1.0174 at 30°, 1.0732 at 60°, 1.1803 at 90°. With L = 1 m and g = 9.81 m/s², T₀ = 2.006 s and T(60°) = 2.153 s.</p>
+  <p class="src">Same numbers as make_figs_L03.py (ME 3001 Lecture 3, versions A and B). History of the problem: Huygens, <i>Horologium Oscillatorium</i> (1673), Lecture 3 supplement S.</p>
+</details>
+</section>
+
+<!-- ============================================================ 2 ACROSS / THROUGH -->
+<section id="at" role="tabpanel" aria-labelledby="tab-at" hidden>
+<div class="lab">
+  <div class="stack">
+    <div>
+      <h2>Drive one element with a through variable and watch the across variable</h2>
+      <p class="claim" id="at-claim"></p>
+    </div>
+    <div class="plot short"><canvas id="at-r" role="img" aria-label="Through variable over time"></canvas></div>
+    <div class="plot short"><canvas id="at-e" role="img" aria-label="Across variable over time"></canvas></div>
+    <div class="plot short"><canvas id="at-p" role="img" aria-label="Power into the element over time"></canvas></div>
+  </div>
+  <aside class="panel" aria-label="Element settings">
+    <div class="ctl"><span style="font-size:14px;font-weight:500">Domain</span>
+      <div class="seg" role="group" aria-label="Domain" id="at-dom" style="margin-top:6px">
+        <button aria-pressed="true" data-v="el">Electrical</button><button aria-pressed="false" data-v="tr">Translational</button><button aria-pressed="false" data-v="ro">Rotational</button>
+      </div></div>
+    <div class="ctl"><span style="font-size:14px;font-weight:500">Element type</span>
+      <div class="seg" role="group" aria-label="Element type" id="at-typ" style="margin-top:6px">
+        <button aria-pressed="true" data-v="D">Resistance</button><button aria-pressed="false" data-v="A">Capacitance</button><button aria-pressed="false" data-v="T">Inductance</button>
+      </div>
+      <small id="at-elname"></small></div>
+    <div class="ctl"><label for="at-par"><span id="at-par-l">R</span> <output id="at-par-o"></output></label>
+      <input type="range" id="at-par" min="0.2" max="5" step="0.1" value="1"></div>
+    <div class="ctl"><label for="at-f">Frequency f <output id="at-f-o"></output></label>
+      <input type="range" id="at-f" min="0.1" max="1.5" step="0.05" value="0.4">
+      <small>Through-variable source: r(t) = 1 · cos 2πft.</small></div>
+    <div class="stats">
+      <div class="stat"><div class="v" id="at-ph">0°</div><div class="l">across relative to through</div></div>
+      <div class="stat"><div class="v" id="at-pm">–</div><div class="l">mean power over a cycle [W]</div></div>
+      <div class="stat"><div class="v" id="at-en">–</div><div class="l" id="at-en-l">stored energy now [J]</div></div>
+      <div class="stat"><div class="v" id="at-Z">–</div><div class="l">impedance Z(s)</div></div>
+    </div>
+    <div class="verdict" id="at-verdict"></div>
+  </aside>
+</div>
+<div class="try"><h3>Predict first, then try</h3><ol>
+  <li>For a mass driven by a sinusoidal force, does the velocity peak together with the force, before it, or after it?</li>
+  <li>Which elements have a mean power of zero? Where does their energy go during half a cycle?</li>
+  <li>Double the frequency. Which element's across amplitude halves, which doubles, which stays?</li>
+  <li>Switch between the domains with the same element type. What stays the same?</li>
+</ol></div>
+<details class="model"><summary>Model and numbers</summary>
+  <p>Through variable r(t) = cos ωt, ω = 2πf. Impedance Z = across / through (Rowell, MIT 2.151):</p>
+  <p><span class="eq">resistance type: e = Z r, Z = R, 1/b, 1/b<sub>t</sub></span> &nbsp; <span class="eq">capacitance type: e = (1/C) ∫ r dt = sin ωt / (Cω), C = C, m, J</span> &nbsp; <span class="eq">inductance type: e = L dr/dt = −Lω sin ωt, L = L, 1/k, 1/k<sub>t</sub></span></p>
+  <p>Power p = e · r (W in every domain shown). Stored energy: ½ C e² for the capacitance type (½ m v² for a mass), ½ L r² for the inductance type (F²/2k for a spring). The resistance type stores nothing; the counter shows the energy it has dissipated as heat.</p>
+  <p class="src">Lecture 3, Sections 3.5 to 3.7, Eqs. (3.7) to (3.11). The thermal domain is left out on purpose: temperature × heat-flow rate is not a power.</p>
+</details>
+</section>
+
+<!-- ============================================================ 3 TWINS -->
+<section id="tw" role="tabpanel" aria-labelledby="tab-tw" hidden>
+<div class="lab">
+  <div class="stack">
+    <div>
+      <h2>A machine and its circuit give one curve</h2>
+      <p class="claim">Left: the machine, driven by the force F. Right: its equivalent circuit, driven by a current source i = F, with C = m, L = 1/k and R = 1/b. The two are simulated with separate code; the blue line is the velocity of the mass, the dashed orange line the capacitor voltage.</p>
+    </div>
+    <div class="duo">
+      <div class="plot pic"><canvas id="tw-mech" role="img" aria-label="Sketch of the mechanical system, moving"></canvas></div>
+      <div class="plot pic"><canvas id="tw-circ" role="img" aria-label="Equivalent electrical circuit with element values"></canvas></div>
+    </div>
+    <div class="plot mid"><canvas id="tw-plot" role="img" aria-label="Velocity of the mass and voltage of the capacitor over time"></canvas></div>
+    <div class="chips" id="tw-chips"></div>
+  </div>
+  <aside class="panel" aria-label="Twin settings">
+    <div class="ctl"><label for="tw-sys">System</label>
+      <select id="tw-sys" style="width:100%;margin-top:6px;font:500 15px var(--sans);padding:7px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)">
+        <option value="ex3">Example 3: m, k, b side by side</option>
+        <option value="ex1">Example 1: spring in front of m and b</option>
+        <option value="ex4">Example 4: spring k₁ in front of m, b, k₂</option>
+        <option value="car">Lecture 1 car: m and drag b</option>
+      </select></div>
+    <div class="ctl"><span style="font-size:14px;font-weight:500">Input</span>
+      <div class="seg" role="group" aria-label="Input" id="tw-in" style="margin-top:6px">
+        <button aria-pressed="true" data-v="step">Step force</button><button aria-pressed="false" data-v="sine">Sine force</button>
+      </div></div>
+    <div class="ctl"><label for="tw-m">Mass m <output id="tw-m-o"></output></label><input type="range" id="tw-m"></div>
+    <div class="ctl"><label for="tw-b">Damper b <output id="tw-b-o"></output></label><input type="range" id="tw-b"></div>
+    <div class="ctl" id="tw-k-box"><label for="tw-k"><span id="tw-k-l">Spring k</span> <output id="tw-k-o"></output></label><input type="range" id="tw-k"></div>
+    <div class="ctl" id="tw-k2-box"><label for="tw-k2">Spring k₂ <output id="tw-k2-o"></output></label><input type="range" id="tw-k2"></div>
+    <div class="row"><button class="btn primary" id="tw-go">Run again</button>
+      <button class="btn" id="tw-alt" aria-pressed="false">Show the other analogy</button></div>
+    <table class="map" id="tw-map" aria-label="Analogy table"></table>
+  </aside>
+</div>
+<div class="try"><h3>Predict first, then try</h3><ol>
+  <li>Example 3: double the mass. What happens to the capacitor in the circuit, and to the oscillation period?</li>
+  <li>Example 1: the spring is in front of the mass. Does it change the velocity of the mass for a step force? Why not?</li>
+  <li>Lecture 1 car: what time constant do you read from the curve? Compare with m/b.</li>
+  <li>Press <b>Show the other analogy</b>. Which connection changes from parallel to series?</li>
+</ol></div>
+<details class="model"><summary>Model and numbers</summary>
+  <p>Machine: node B carries the mass m, the damper b and (if present) the spring k₂ to the ground; a series spring k₁ may sit between the force and node B.
+  <span class="eq">m dv<sub>B</sub>/dt = F − b v<sub>B</sub> − k₂ x<sub>B</sub></span>. The series spring carries F in every case, so it does not change v<sub>B</sub>; it changes the velocity of the point where F acts: v<sub>A</sub> = v<sub>B</sub> + (1/k₁) dF/dt.</p>
+  <p>Circuit (force-current analogy, Firestone 1933): <span class="eq">C de<sub>B</sub>/dt = i − e<sub>B</sub>/R − i<sub>L2</sub></span>, <span class="eq">L₂ di<sub>L2</sub>/dt = e<sub>B</sub></span>, with C = m, R = 1/b, L₂ = 1/k₂. Both are integrated with fourth-order Runge–Kutta from rest.</p>
+  <p>Check against make_figs_L03.py: Example 1 with m = 1 kg, b = 4 N·s/m, k = 100 N/m and a 10 N step settles at F/b = 2.5 m/s with time constant m/b = 0.25 s. The car (1000 kg, 50 N·s/m, 1250 N) settles at 25 m/s = 90 km/h with time constant 20 s.</p>
+  <p class="src">F. A. Firestone, J. Acoust. Soc. Am. 4 (1933) 249–267, doi:10.1121/1.1915605; D. Rowell, Impedance-Based Modeling Methods, MIT 2.151 (2003).</p>
+</details>
+</section>
+
+<!-- ============================================================ 4 IMPEDANCE -->
+<section id="imp" role="tabpanel" aria-labelledby="tab-imp" hidden>
+<div class="lab">
+  <div class="stack">
+    <div>
+      <h2>Series or parallel? Find Z(s) = V(s)/F(s)</h2>
+      <p class="quiz-q" id="iq-q"></p>
+    </div>
+    <div class="plot mid"><canvas id="iq-net" role="img" aria-label="Mechanical network of the question"></canvas></div>
+    <div class="choices" id="iq-choices"></div>
+    <div class="verdict" id="iq-fb" hidden></div>
+    <div class="plot mid" id="iq-plot-box" hidden><canvas id="iq-plot" role="img" aria-label="Displacement of the force point for a 1 N step"></canvas></div>
+  </div>
+  <aside class="panel" aria-label="Trainer">
+    <p class="progress" id="iq-prog"></p>
+    <div class="stats">
+      <div class="stat"><div class="v" id="iq-score">0</div><div class="l">correct this round</div></div>
+      <div class="stat"><div class="v" id="iq-best">–</div><div class="l">your best round (this browser)</div></div>
+    </div>
+    <div class="row"><button class="btn primary" id="iq-next" disabled>Next question</button><button class="btn" id="iq-new">New round</button></div>
+    <div class="warnbox"><b>Rule.</b> Elements that share a velocity are in parallel: their admittances add. Elements that carry the same force are in series: their impedances add. Element impedances: damper 1/b, mass 1/(ms) to the ground, spring s/k.</div>
+  </aside>
+</div>
+<div class="try"><h3>Predict first, then try</h3><ol>
+  <li>Before choosing, say which elements share a velocity and which carry the same force.</li>
+  <li>After answering, read the step response: does the force point keep moving (a damper path to the ground), settle (a spring path) or oscillate?</li>
+</ol></div>
+<details class="model"><summary>Model and numbers</summary>
+  <p>Eight questions per round in random order. The response plot is the displacement of the point where F acts, X(s) = Z(s) F(s) / s, for a 1 N step, with the sample values shown under the plot. It is computed from Z(s) with a state-space realization and fourth-order Runge–Kutta.</p>
+  <p class="src">Questions follow Examples 1 to 4 of Lecture 3 and the concept questions of version B. Best score is kept only in this browser.</p>
+</details>
+</section>
+
+<footer class="foot">ME 3001 System Dynamics and Control, Karadeniz Technical University. Lecture 3 decks: versions A, B and supplement S. Convention: Z = across/through (Rowell, MIT 2.151); vibration texts call F/v the mechanical impedance.</footer>
+</div>
+
+<script>
+"use strict";
+/* ---------- helpers (as in the Lecture 1 Feedback Lab) ----------------- */
+const $ = id => document.getElementById(id);
+const tok = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+function niceStep(range, n){
+  const raw = range / n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+}
+function fitCanvas(cv){
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const w = Math.max(10, Math.round(r.width * dpr)), h = Math.max(10, Math.round(r.height * dpr));
+  if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return {ctx, w: r.width, h: r.height};
+}
+const fmt = (v, d = 2) => (Math.abs(v) < 1e-12 ? 0 : v).toFixed(d);
+const tickTxt = (v, st) => (Math.abs(v) < 1e-9 ? 0 : +v.toFixed(st < 0.1 ? 2 : st < 1 ? 1 : 0)).toString();
+
+/* x-y plot. o = {x0,x1,y0,y1, xlabel, ylabel, series:[{pts,color,dash,width}], bands:[[xa,xb]], marks:[{x,y,color}],
+   refs:[{y,label}], xticks:[...], xtickLabel:fn, rightPad} */
+function drawXY(cv, o){
+  const {ctx, w, h} = fitCanvas(cv);
+  const ink2 = tok("--ink2"), grid = tok("--grid"), muted = tok("--muted"), ink = tok("--ink");
+  ctx.clearRect(0, 0, w, h);
+  const L = 52, R = o.rightPad ?? 18, T = 12, B = 38, pw = w - L - R, ph = h - T - B;
+  const X = x => L + (x - o.x0) / (o.x1 - o.x0) * pw, Y = y => T + (o.y1 - y) / (o.y1 - o.y0) * ph;
+  for (const b of o.bands || []){ ctx.fillStyle = tok("--key-bg"); ctx.fillRect(X(b[0]), T, X(b[1]) - X(b[0]), ph); }
+  ctx.font = "12px " + tok("--mono"); ctx.strokeStyle = grid; ctx.lineWidth = 1; ctx.fillStyle = ink2;
+  const ys = niceStep(o.y1 - o.y0, 5); ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let v = Math.ceil(o.y0 / ys) * ys; v <= o.y1 + 1e-9; v += ys){ const y = Y(v);
+    ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(L + pw, y); ctx.stroke(); ctx.fillText(tickTxt(v, ys), L - 6, y); }
+  const xt = o.xticks || (() => { const s = niceStep(o.x1 - o.x0, 6), a = []; for (let v = Math.ceil(o.x0 / s) * s; v <= o.x1 + 1e-9; v += s) a.push(v); return a; })();
+  const xs = xt.length > 1 ? xt[1] - xt[0] : 1;
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (const v of xt){ const x = X(v); ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, T + ph); ctx.stroke();
+    ctx.fillText(o.xtickLabel ? o.xtickLabel(v) : tickTxt(v, xs), x, T + ph + 5); }
+  ctx.fillStyle = muted; ctx.font = "12px " + tok("--sans");
+  ctx.fillText(o.xlabel, L + pw / 2, T + ph + 20);
+  ctx.save(); ctx.translate(12, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = "middle"; ctx.fillText(o.ylabel, 0, 0); ctx.restore();
+  for (const rl of o.refs || []){ ctx.strokeStyle = ink; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(L, Y(rl.y)); ctx.lineTo(L + pw, Y(rl.y)); ctx.stroke(); ctx.setLineDash([]);
+    if (rl.label){ ctx.fillStyle = ink; ctx.textAlign = "left"; ctx.textBaseline = "bottom"; ctx.fillText(rl.label, L + 4, Y(rl.y) - 2); } }
+  ctx.save(); ctx.beginPath(); ctx.rect(L, T, pw, ph); ctx.clip();
+  for (const s of o.series){ ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2.4; ctx.setLineDash(s.dash || []);
+    ctx.beginPath(); s.pts.forEach((p, i) => { const x = X(p[0]), y = Y(p[1]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); }
+  ctx.setLineDash([]);
+  for (const m of o.marks || []){ ctx.fillStyle = m.color || ink; ctx.beginPath(); ctx.arc(X(m.x), Y(m.y), 5, 0, 2 * Math.PI); ctx.fill(); }
+  ctx.restore();
+  ctx.strokeStyle = tok("--line"); ctx.lineWidth = 1; ctx.strokeRect(L + .5, T + .5, pw, ph);
+}
+
+/* Strip chart: time on x (moving window). */
+function drawStrip(cv, o){
+  const t1 = Math.max(o.tEnd, o.window), t0 = t1 - o.window;
+  let y0 = o.ymin, y1 = o.ymax;
+  if (o.auto){ y0 = Infinity; y1 = -Infinity;
+    for (const s of o.series) for (const p of s.pts) if (p[0] >= t0){ y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
+    if (!isFinite(y0)){ y0 = -1; y1 = 1; }
+    if (o.include){ y0 = Math.min(y0, o.include[0]); y1 = Math.max(y1, o.include[1]); }
+    const pad = Math.max((y1 - y0) * 0.1, 1e-3); y0 -= pad; y1 += pad; }
+  drawXY(cv, {x0: t0, x1: t1, y0, y1, xlabel: o.xlabel || "time t [s]", ylabel: o.ylabel, rightPad: 18,
+    series: o.series.map(s => ({...s, pts: s.pts.filter(p => p[0] >= t0 - 0.05)})), refs: o.refs});
+}
+
+/* RK4 on arrays */
+function rk4(f, t, y, h){
+  const k1 = f(t, y), k2 = f(t + h / 2, y.map((v, i) => v + h / 2 * k1[i])),
+        k3 = f(t + h / 2, y.map((v, i) => v + h / 2 * k2[i])), k4 = f(t + h, y.map((v, i) => v + h * k3[i]));
+  return y.map((v, i) => v + h / 6 * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]));
+}
+
+/* ---------- schematic symbols on canvas (same shapes as the slides) ---- */
+const SCH = {
+  frame(p1, p2){ const dx = p2[0] - p1[0], dy = p2[1] - p1[1], L = Math.hypot(dx, dy); const ux = dx / L, uy = dy / L;
+    return {L, P: (a, n) => [p1[0] + a * ux + n * uy, p1[1] + a * uy - n * ux]}; },
+  line(ctx, pts){ ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke(); },
+  zig(ctx, p1, p2, n, amp, body){ const {L, P} = SCH.frame(p1, p2), a0 = L * (1 - body) / 2, a1 = L * (1 + body) / 2;
+    const pts = [p1, P(a0, 0)]; for (let i = 0; i < 2 * n; i++) pts.push(P(a0 + (a1 - a0) / (2 * n) * (i + .5), i % 2 ? -amp : amp));
+    pts.push(P(a1, 0), p2); SCH.line(ctx, pts); },
+  spring(ctx, p1, p2){ SCH.zig(ctx, p1, p2, 6, 7, 0.6); },
+  resistor(ctx, p1, p2){ SCH.zig(ctx, p1, p2, 4, 6, 0.42); },
+  damper(ctx, p1, p2){ const {L, P} = SCH.frame(p1, p2), a0 = L * 0.32, a1 = L * 0.68, h = 9, ap = a0 + 0.55 * (a1 - a0);
+    SCH.line(ctx, [p1, P(a0, 0)]); SCH.line(ctx, [P(a1, h), P(a0, h), P(a0, -h), P(a1, -h)]);
+    ctx.save(); ctx.lineWidth *= 1.8; SCH.line(ctx, [P(ap, 6.5), P(ap, -6.5)]); ctx.restore(); SCH.line(ctx, [P(ap, 0), p2]); },
+  inductor(ctx, p1, p2){ const {L, P} = SCH.frame(p1, p2), a0 = L * 0.27, a1 = L * 0.73, n = 4, d = (a1 - a0) / n;
+    SCH.line(ctx, [p1, P(a0, 0)]); ctx.beginPath();
+    for (let i = 0; i < n; i++) for (let j = 0; j <= 12; j++){ const ph = Math.PI - Math.PI * j / 12, q = P(a0 + d * (i + .5) + d / 2 * Math.cos(ph), d / 2 * Math.sin(ph));
+      (i || j) ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }
+    ctx.stroke(); SCH.line(ctx, [P(a1, 0), p2]); },
+  capacitor(ctx, p1, p2){ const {L, P} = SCH.frame(p1, p2), a0 = L / 2 - 4, a1 = L / 2 + 4;
+    SCH.line(ctx, [p1, P(a0, 0)]); SCH.line(ctx, [P(a1, 0), p2]);
+    ctx.save(); ctx.lineWidth *= 1.8; SCH.line(ctx, [P(a0, 11), P(a0, -11)]); SCH.line(ctx, [P(a1, 11), P(a1, -11)]); ctx.restore(); },
+  massbox(ctx, p1, p2, lab){ const {L, P} = SCH.frame(p1, p2), c = P(L / 2, 0), bw = 34, bh = 24;
+    const horiz = Math.abs(p2[0] - p1[0]) > Math.abs(p2[1] - p1[1]), al = horiz ? bw : bh;
+    SCH.line(ctx, [p1, P(L / 2 - al / 2, 0)]); SCH.line(ctx, [P(L / 2 + al / 2, 0), p2]);
+    ctx.fillStyle = tok("--surface"); ctx.fillRect(c[0] - bw / 2, c[1] - bh / 2, bw, bh); ctx.strokeRect(c[0] - bw / 2, c[1] - bh / 2, bw, bh);
+    SCH.text(ctx, lab || "m", c[0], c[1], "center"); },
+  text(ctx, s, x, y, al = "left", size = 15){ ctx.save(); ctx.fillStyle = tok("--ink"); ctx.font = `italic ${size}px Cambria, "Cambria Math", Georgia, serif`;
+    ctx.textAlign = al; ctx.textBaseline = "middle"; ctx.fillText(s, x, y); ctx.restore(); },
+  source(ctx, x, y, r = 13){ ctx.fillStyle = tok("--surface"); ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+    SCH.line(ctx, [[x, y + r * .6], [x, y - r * .6]]); ctx.beginPath(); ctx.moveTo(x, y - r * .7); ctx.lineTo(x - 4, y - r * .2); ctx.lineTo(x + 4, y - r * .2); ctx.closePath(); ctx.fillStyle = tok("--ink"); ctx.fill(); },
+  ground(ctx, x, y, w, dir = "down"){ SCH.line(ctx, [[x - w / 2, y], [x + w / 2, y]]); const s = dir === "down" ? 1 : -1;
+    for (let i = 0; i < 6; i++){ const xi = x - w / 2 + (i + .5) * w / 6; SCH.line(ctx, [[xi + 3, y], [xi - 3, y + 7 * s]]); } },
+  dot(ctx, x, y){ ctx.fillStyle = tok("--ink"); ctx.beginPath(); ctx.arc(x, y, 3.2, 0, 2 * Math.PI); ctx.fill(); },
+  elem(ctx, kind, p1, p2, lab, side = 1){
+    ({k: SCH.spring, b: SCH.damper, R: SCH.resistor, L: SCH.inductor, C: SCH.capacitor})[kind]
+      ? ({k: SCH.spring, b: SCH.damper, R: SCH.resistor, L: SCH.inductor, C: SCH.capacitor})[kind](ctx, p1, p2) : SCH.massbox(ctx, p1, p2, lab);
+    if (lab && kind !== "m"){ const vert = Math.abs(p2[0] - p1[0]) < Math.abs(p2[1] - p1[1]);
+      const cx = (p1[0] + p2[0]) / 2, cy = (p1[1] + p2[1]) / 2;
+      if (vert) SCH.text(ctx, lab, cx + side * 16, cy, side > 0 ? "left" : "right", SCH.lab);
+      else SCH.text(ctx, lab, cx, cy - 20, "center", SCH.lab); } },
+  lab: 14
+};
+
+/* Ladder network: spec = [{t:"series", br:[[{k,l}],...]} | {t:"shunt", els:[{k,l}]}]; draws source, top and bottom rails */
+function drawLadder(cv, spec, opt = {}){
+  const {ctx, w, h} = fitCanvas(cv); ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = tok("--ink"); ctx.lineWidth = 1.6; ctx.lineCap = "round";
+  // width units: source 1, shunt 1 each, series 1.6 each
+  let units = 0.9; for (const it of spec) units += it.t === "shunt" ? it.els.length * 1.0 : 1.7;
+  const u = Math.min(110, (w - 110) / units), x0 = 30 + Math.max(0, (w - 110 - units * u) / 2);
+  SCH.lab = u < 80 ? 11 : 14;
+  const yt = opt.yt ?? h * 0.42, yb = opt.yb ?? h * 0.86;
+  SCH.source(ctx, x0, (yt + yb) / 2); SCH.line(ctx, [[x0, (yt + yb) / 2 - 13], [x0, yt]]); SCH.line(ctx, [[x0, (yt + yb) / 2 + 13], [x0, yb]]);
+  SCH.text(ctx, opt.src || "F", x0 - 18, (yt + yb) / 2, "right");
+  let x = x0; const nodes = [];
+  for (const it of spec){
+    if (it.t === "shunt") for (const e of it.els){ const nx = x + u; SCH.line(ctx, [[x, yt], [nx, yt]]); SCH.elem(ctx, e.k, [nx, yt], [nx, yb], e.l, 1); x = nx; }
+    else { const xa = x + u * 0.2, xb = x + u * 1.7; SCH.line(ctx, [[x, yt], [xa, yt]]);
+      it.br.forEach((br, j) => { const y = yt - j * 44; if (j){ SCH.line(ctx, [[xa, yt], [xa, y]]); SCH.line(ctx, [[xb, yt], [xb, y]]); }
+        const seg = (xb - xa) / br.length; br.forEach((e, q) => { SCH.elem(ctx, e.k, [xa + q * seg, y], [xa + (q + 1) * seg, y], e.l); if (q) SCH.dot(ctx, xa + q * seg, y); }); });
+      nodes.push(xb); SCH.dot(ctx, xb, yt); x = xb; }
+  }
+  SCH.line(ctx, [[x0, yb], [x, yb]]);
+  return {x0, x1: x, yt, yb};
+}
+
+/* Rational functions: polynomials as arrays, highest power first */
+const P = {
+  trim(a){ let i = 0; while (i < a.length - 1 && Math.abs(a[i]) < 1e-12) i++; return a.slice(i); },
+  add(a, b){ const n = Math.max(a.length, b.length), r = Array(n).fill(0);
+    a.forEach((v, i) => r[n - a.length + i] += v); b.forEach((v, i) => r[n - b.length + i] += v); return P.trim(r); },
+  mul(a, b){ const r = Array(a.length + b.length - 1).fill(0); a.forEach((x, i) => b.forEach((y, j) => r[i + j] += x * y)); return P.trim(r); }
+};
+const Zel = {k: v => [[1, 0], [v]], b: v => [[1], [v]], m: v => [[1], [v, 0]]};   // [num, den]
+const ser = (A, B) => [P.add(P.mul(A[0], B[1]), P.mul(B[0], A[1])), P.mul(A[1], B[1])];
+const par = (A, B) => [P.mul(A[0], B[0]), P.add(P.mul(A[0], B[1]), P.mul(B[0], A[1]))];
+
+/* Step response of num/den (proper) by controllable canonical form + RK4 */
+function stepTF(num, den, tEnd, n = 600){
+  num = P.trim(num); den = P.trim(den); const a0 = den[0]; den = den.map(v => v / a0); num = num.map(v => v / a0);
+  const N = den.length - 1; let D = 0;
+  if (num.length === den.length){ D = num[0]; num = P.trim(P.add(num, den.map(v => -D * v))); if (num.length === den.length) num = num.slice(1); }
+  const c = Array(N).fill(0); num.forEach((v, i) => c[N - num.length + i] = v);   // c for s^(N-1) .. s^0
+  const f = (t, x) => { const dx = Array(N); for (let i = 0; i < N - 1; i++) dx[i] = x[i + 1];
+    dx[N - 1] = 1 - den.slice(1).reduce((acc, ai, j) => acc + ai * x[N - 1 - j], 0); return dx; };
+  let x = Array(N).fill(0); const out = [], h = tEnd / n, sub = 10;
+  const y = x => c.reduce((acc, ci, i) => acc + ci * x[N - 1 - i], 0) + D;
+  for (let i = 0; i <= n; i++){ out.push([i * h, N ? y(x) : D]); for (let s = 0; s < sub && N; s++) x = rk4(f, 0, x, h / sub); }
+  return out;
+}
+
+/* ---------- tabs ------------------------------------------------------- */
+const labs = {};
+const tabs = [...document.querySelectorAll('nav.tabs [role="tab"]')];
+function showTab(id){
+  for (const b of tabs){ const on = b.getAttribute("aria-controls") === id;
+    b.setAttribute("aria-selected", on); $(b.getAttribute("aria-controls")).hidden = !on; }
+  for (const k in labs) labs[k].active = (k === id);
+  if (labs[id] && labs[id].redraw) labs[id].redraw();
+  store.set("ml-tab", id);
+}
+tabs.forEach(b => b.addEventListener("click", () => { showTab(b.getAttribute("aria-controls")); history.replaceState(null, "", "#" + b.getAttribute("aria-controls")); }));
+tabs.forEach((b, i) => b.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight" || e.key === "ArrowLeft"){ const j = (i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length; tabs[j].focus(); tabs[j].click(); }
+}));
+function segInit(id, cb){ document.querySelectorAll(`#${id} button`).forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(`#${id} button`).forEach(x => x.setAttribute("aria-pressed", x === b)); cb(b.dataset.v); })); }
+const chip = (cssVar, sym, val) => `<span class="chip" style="--c:var(${cssVar})"><em>${sym}</em> ${val}</span>`;
+function verdict(el, cssVar, txt){ el.style.setProperty("--vc", `var(${cssVar})`); el.innerHTML = txt; }
+
+let lastTs = null;
+function frame(ts){
+  const dtReal = lastTs === null ? 0 : Math.min(0.1, (ts - lastTs) / 1000); lastTs = ts;
+  for (const k in labs){ const L = labs[k]; if (L.active && L.step) L.step(dtReal); }
+  requestAnimationFrame(frame);
+}
+const redrawAll = () => { for (const k in labs) if (labs[k].active && labs[k].redraw) labs[k].redraw(); };
+window.addEventListener("resize", redrawAll);
+if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", redrawAll);
+new MutationObserver(redrawAll).observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme"]});
+
+/* ============================================================ 1 LINEARIZE */
+(() => {
+  const g = 9.81, D2R = Math.PI / 180, DT = 0.002, WIN = 10;
+  const el = {op: $("ln-op"), amp: $("ln-amp"), L: $("ln-L")};
+  let S;
+  function agmK(k){ let a = 1, b = Math.sqrt(1 - k * k); for (let i = 0; i < 30; i++){ const an = (a + b) / 2; b = Math.sqrt(a * b); a = an; } return Math.PI / (2 * a); }
+  const theoryRatio = deg => 2 * agmK(Math.sin(deg * D2R / 2)) / Math.PI;
+  function band(opDeg){
+    const t0 = opDeg * D2R, s0 = Math.sin(t0), c0 = Math.cos(t0);
+    const ok = th => { const dT = Math.sin(th) - s0, dl = c0 * (th - t0); return Math.abs(dT) > 1e-12 && Math.abs(dT - dl) <= 0.05 * Math.abs(dT); };
+    if (Math.abs(c0) < 1e-6) return null;
+    let a = 0, b = 0; const st = 0.1 * D2R;
+    while (t0 - (a + st) > -Math.PI && ok(t0 - a - st)) a += st;
+    while (t0 + (b + st) < Math.PI && ok(t0 + b + st)) b += st;
+    return [opDeg - a / D2R, opDeg + b / D2R];
+  }
+  function out(){
+    $("ln-op-o").textContent = el.op.value + "°"; $("ln-amp-o").textContent = el.amp.value + "°"; $("ln-L-o").textContent = (+el.L.value).toFixed(2) + " m";
+  }
+  function drawTorque(){
+    const op = +el.op.value, t0 = op * D2R, s0 = Math.sin(t0), c0 = Math.cos(t0);
+    const sinPts = [], tan = [];
+    for (let d = -180; d <= 180; d += 1){ sinPts.push([d, Math.sin(d * D2R)]); tan.push([d, s0 + c0 * (d * D2R - t0)]); }
+    const bd = band(op);
+    drawXY($("ln-torque"), {x0: -180, x1: 180, y0: -1.6, y1: 1.6, xlabel: "angle θ [degrees]", ylabel: "T / MgL",
+      xticks: [-180, -135, -90, -45, 0, 45, 90, 135, 180], bands: bd ? [bd] : [],
+      series: [{pts: sinPts, color: tok("--s-closed")}, {pts: tan, color: tok("--s-open"), dash: [7, 5], width: 2}],
+      marks: [{x: op, y: s0, color: tok("--ink")}]});
+    const chips = [chip("--s-closed", "T̄/MgL", fmt(s0, 3)), chip("--s-open", "slope K/MgL", fmt(c0, 3))];
+    chips.push(bd ? chip("--sig-r", "5 % band", `${fmt(bd[0], 0)}° to ${fmt(bd[1], 0)}°`) : chip("--sig-e", "5 % band", "none"));
+    $("ln-chips").innerHTML = chips.join("");
+    const v = $("ln-verdict");
+    if (Math.abs(c0) < 1e-6) verdict(v, "--warn-bar", "Slope zero at θ̄ = ±90°: the linear model keeps only a constant torque, so every deviation is lost.");
+    else if (c0 < 0) verdict(v, "--warn-bar", `Negative slope K = ${fmt(c0, 2)} MgL: the torque pushes the pendulum away from θ̄. Linearized about the upright position, G(s) = (1/ML²)/(s² − g/L) has a pole at +√(g/L): unstable.`);
+    else verdict(v, "--sig-c", `Positive slope K = ${fmt(c0, 2)} MgL: a restoring torque. About θ̄ = 0, G(s) = (1/ML²)/(s² + g/L).`);
+  }
+  function release(){
+    const th0 = +el.amp.value * D2R, Lm = +el.L.value;
+    S = {t: 0, acc: 0, k: 0, y: [th0, 0], th0, w0: Math.sqrt(g / Lm), Lm, nl: [[0, th0 / D2R]], li: [[0, th0 / D2R]], peaks: [], prevV: 0};
+    const T0 = 2 * Math.PI / S.w0; $("ln-T0").textContent = T0.toFixed(3);
+    $("ln-theory").textContent = theoryRatio(+el.amp.value).toFixed(4); $("ln-T").textContent = "–"; $("ln-ratio").textContent = "–";
+  }
+  const f = (t, y) => [y[1], -S.w0 * S.w0 * Math.sin(y[0])];
+  function step(dtReal){
+    if (!S) return; S.acc += dtReal; let n = 0;
+    while (S.acc >= DT && n < 200){ const v0 = S.y[1]; S.y = rk4(f, S.t, S.y, DT); S.t += DT; S.acc -= DT; n++;
+      if (v0 > 0 && S.y[1] <= 0){ S.peaks.push(S.t); if (S.peaks.length >= 2){ const k = S.peaks.length - 1;
+        const T = (S.peaks[k] - S.peaks[0]) / k; $("ln-T").textContent = T.toFixed(3); $("ln-ratio").textContent = (T / (2 * Math.PI / S.w0)).toFixed(4); } }
+      if (++S.k % 10 === 0){ S.nl.push([S.t, S.y[0] / D2R]); S.li.push([S.t, S.th0 * Math.cos(S.w0 * S.t) / D2R]); } }
+    while (S.nl.length > 3000){ S.nl.shift(); S.li.shift(); }
+    drawTime(); drawPic();
+  }
+  function drawTime(){
+    if (!S) return; const A = +el.amp.value;
+    drawStrip($("ln-time"), {tEnd: S.t, window: WIN, ymin: -A * 1.1 - 5, ymax: A * 1.1 + 5, ylabel: "angle θ [°]",
+      series: [{pts: S.nl, color: tok("--s-closed")}, {pts: S.li, color: tok("--s-open"), dash: [7, 5], width: 2}]});
+  }
+  function drawPic(){
+    const {ctx, w, h} = fitCanvas($("ln-pic")); ctx.clearRect(0, 0, w, h);
+    const px = w / 2, py = 26, R = Math.min(h - 70, w * 0.42);
+    ctx.strokeStyle = tok("--ink"); ctx.lineWidth = 1.6; SCH.ground(ctx, px, py - 2, 60, "up");
+    const draw = (th, col, dash) => { const x = px + R * Math.sin(th), y = py + R * Math.cos(th);
+      ctx.strokeStyle = col; ctx.setLineDash(dash || []); ctx.lineWidth = 2.2; SCH.line(ctx, [[px, py], [x, y]]); ctx.setLineDash([]);
+      ctx.fillStyle = dash ? tok("--surface") : col; ctx.beginPath(); ctx.arc(x, y, 11, 0, 2 * Math.PI); ctx.fill(); ctx.stroke(); };
+    const thN = S ? S.y[0] : 0, thL = S ? S.th0 * Math.cos(S.w0 * S.t) : 0;
+    draw(thL, tok("--s-open"), [6, 4]); draw(thN, tok("--s-closed"));
+    ctx.fillStyle = tok("--ink2"); ctx.font = "12px " + tok("--sans"); ctx.textAlign = "center";
+    ctx.fillText(`t = ${S ? S.t.toFixed(1) : "0.0"} s`, px, h - 10);
+  }
+  for (const k of ["op", "amp", "L"]) el[k].addEventListener("input", () => { out(); if (k === "op") drawTorque(); else release(); });
+  $("ln-down").addEventListener("click", () => { el.op.value = 0; out(); drawTorque(); });
+  $("ln-up").addEventListener("click", () => { el.op.value = 180; out(); drawTorque(); });
+  $("ln-go").addEventListener("click", release);
+  out(); release();
+  labs.lin = {active: false, step, redraw: () => { drawTorque(); drawTime(); drawPic(); }};
+})();
+
+/* ============================================================ 2 ACROSS / THROUGH */
+(() => {
+  const DOM = {
+    el: {r: "i", rU: "A", e: "e", eU: "V", D: ["resistor", "R", "Ω", "dir"], A: ["capacitor", "C", "F", "cap"], T: ["inductor", "L", "H", "dir"]},
+    tr: {r: "F", rU: "N", e: "v", eU: "m/s", D: ["damper", "b", "N·s/m", "inv"], A: ["mass (to ground)", "m", "kg", "cap"], T: ["spring", "k", "N/m", "inv"]},
+    ro: {r: "T", rU: "N·m", e: "ω", eU: "rad/s", D: ["rotational damper", "b_t", "N·m·s/rad", "inv"], A: ["inertia", "J", "kg·m²", "cap"], T: ["torsional spring", "k_t", "N·m/rad", "inv"]}
+  };
+  let dom = "el", typ = "D", S;
+  const sub = s => s.replace("_t", "<sub>t</sub>");
+  function reset(){ S = {t: 0, r: [], e: [], p: [], diss: 0}; }
+  function coef(){ const p = +$("at-par").value, d = DOM[dom][typ]; return d[3] === "inv" ? 1 / p : p; }   // Z-coefficient (R or 1/b, C, L or 1/k)
+  function ui(){
+    const D = DOM[dom], d = D[typ];
+    $("at-par-l").innerHTML = sub(d[1]); $("at-par-o").textContent = `${(+$("at-par").value).toFixed(1)} ${d[2]}`;
+    $("at-f-o").textContent = `${(+$("at-f").value).toFixed(2)} Hz`;
+    $("at-elname").innerHTML = `Element: ${d[0]}. Through variable <i>${D.r}</i> [${D.rU}], across variable <i>${D.e}</i> [${D.eU}].`;
+    const c = coef(), Z = typ === "D" ? fmt(c, 2) : typ === "A" ? `1/(${fmt(c, 2)} s)` : `${fmt(c, 2)} s`;
+    $("at-Z").textContent = Z;
+    $("at-en-l").textContent = typ === "D" ? "energy dissipated so far [J]" : "stored energy now [J]";
+    $("at-ph").textContent = typ === "D" ? "in phase" : typ === "A" ? "lags 90°" : "leads 90°";
+    $("at-claim").innerHTML = `The source pushes the through variable <i>${D.r}</i> = cos 2πft through the ${d[0]}. Its across variable <i>${D.e}</i> follows from the element law; their product is the power into the element.`;
+    const v = $("at-verdict");
+    if (typ === "D") verdict(v, "--warn-bar", "Resistance type: power is never negative. The element turns energy into heat and gives none back.");
+    else verdict(v, "--sig-c", (typ === "A" ? "Capacitance type: it stores energy as a function of the across variable" : "Inductance type: it stores energy as a function of the through variable") + ". Power flows in for a quarter cycle and back out for the next: the mean is zero.");
+  }
+  function step(dtReal){
+    const w = 2 * Math.PI * +$("at-f").value, c = coef(), D = DOM[dom];
+    const n = Math.max(1, Math.round(dtReal / 0.01));
+    for (let i = 0; i < n; i++){
+      S.t += dtReal / n; const t = S.t, r = Math.cos(w * t);
+      const e = typ === "D" ? c * r : typ === "A" ? Math.sin(w * t) / (c * w) : -c * w * Math.sin(w * t);
+      const p = e * r; S.diss += p * dtReal / n;
+      S.r.push([t, r]); S.e.push([t, e]); S.p.push([t, p]); }
+    while (S.r.length > 2000){ S.r.shift(); S.e.shift(); S.p.shift(); }
+    const per = 1 / +$("at-f").value, recent = S.p.filter(q => q[0] > S.t - per);
+    if (S.t > per && recent.length > 2){ let a = 0; for (let i = 1; i < recent.length; i++) a += (recent[i][0] - recent[i - 1][0]) * (recent[i][1] + recent[i - 1][1]) / 2; $("at-pm").textContent = fmt(a / per, 3); }
+    const last = S.e[S.e.length - 1][1], lr = S.r[S.r.length - 1][1];
+    $("at-en").textContent = typ === "D" ? fmt(S.diss, 2) : typ === "A" ? fmt(0.5 * c * last * last, 3) : fmt(0.5 * c * lr * lr, 3);
+    draw(D);
+  }
+  function draw(D){
+    D = D || DOM[dom]; if (!S) return;
+    drawStrip($("at-r"), {tEnd: S.t, window: 8, ymin: -1.2, ymax: 1.2, ylabel: `${D.r} [${D.rU}]`, series: [{pts: S.r, color: tok("--sig-r")}]});
+    drawStrip($("at-e"), {tEnd: S.t, window: 8, auto: true, include: [-0.2, 0.2], ylabel: `${D.e} [${D.eU}]`, series: [{pts: S.e, color: tok("--sig-c")}]});
+    drawStrip($("at-p"), {tEnd: S.t, window: 8, auto: true, include: [-0.2, 0.2], ylabel: "p = e·r [W]", refs: [{y: 0}], series: [{pts: S.p, color: tok("--accent")}]});
+  }
+  segInit("at-dom", v => { dom = v; reset(); ui(); }); segInit("at-typ", v => { typ = v; reset(); ui(); });
+  $("at-par").addEventListener("input", () => { reset(); ui(); }); $("at-f").addEventListener("input", () => { reset(); ui(); });
+  reset(); ui();
+  labs.at = {active: false, step, redraw: () => draw()};
+})();
+
+/* ============================================================ 3 TWINS */
+(() => {
+  const PRE = {
+    ex3: {ks: 0, k2: true, m: [0.5, 5, 0.1, 1], b: [0.5, 20, 0.5, 2], k: [10, 200, 5, 50], F: 10, win: 6, speed: 1, kl: "Spring k (to ground)"},
+    ex1: {ks: 1, k2: false, m: [0.5, 5, 0.1, 1], b: [0.5, 20, 0.5, 4], k: [10, 200, 5, 100], F: 10, win: 3, speed: 0.5, kl: "Spring k (in front)"},
+    ex4: {ks: 1, k2: true, m: [0.5, 5, 0.1, 1], b: [0.5, 20, 0.5, 2], k: [10, 200, 5, 50], k2v: [10, 200, 5, 30], F: 10, win: 6, speed: 1, kl: "Spring k₁ (in front)"},
+    car: {ks: 0, k2: false, m: [500, 2000, 50, 1000], b: [20, 200, 5, 50], k: null, F: 1250, win: 120, speed: 15, kl: ""}
+  };
+  let sys = "ex3", inp = "step", alt = false, S;
+  const el = {m: $("tw-m"), b: $("tw-b"), k: $("tw-k"), k2: $("tw-k2")};
+  function setRange(e, r){ e.min = r[0]; e.max = r[1]; e.step = r[2]; e.value = r[3]; }
+  function preset(){
+    const p = PRE[sys]; setRange(el.m, p.m); setRange(el.b, p.b);
+    $("tw-k-box").hidden = !p.k; if (p.k) setRange(el.k, p.k); $("tw-k-l").textContent = p.kl;
+    $("tw-k2-box").hidden = sys !== "ex4"; if (sys === "ex4") setRange(el.k2, p.k2v);
+    reset();
+  }
+  function par(){ const p = PRE[sys], m = +el.m.value, b = +el.b.value, k = p.k ? +el.k.value : 0;
+    return {m, b, ks: p.ks ? k : 0, kg: sys === "ex3" ? k : sys === "ex4" ? +el.k2.value : 0, F0: p.F}; }
+  const force = (t, F0) => inp === "step" ? F0 : F0 * Math.sin(2 * Math.PI * 0.8 * (PRE[sys].win / 6) ** -1 * t);
+  function reset(){ S = {t: 0, acc: 0, k: 0, mech: [0, 0], circ: [0, 0], v: [], e: [], maxd: 0}; out(); drawCirc(); drawMech(); drawPlot(); }
+  function out(){
+    const q = par(), p = PRE[sys];
+    $("tw-m-o").textContent = `${q.m} kg`; $("tw-b-o").textContent = `${q.b} N·s/m`;
+    if (p.k) $("tw-k-o").textContent = `${el.k.value} N/m`; if (sys === "ex4") $("tw-k2-o").textContent = `${el.k2.value} N/m`;
+    const rows = alt
+      ? [["force F", "voltage e"], ["velocity v", "current i"], ["mass m", "inductor L = m"], ["spring k", "capacitor C = 1/k"], ["damper b", "resistor R = b"], ["parallel group", "series loop"]]
+      : [["force F", "current i"], ["velocity v", "voltage e"], ["mass m", `capacitor C = ${q.m}`], ["spring k", "inductor L = 1/k"], ["damper b", `resistor R = ${fmt(1 / q.b, 3)}`], ["parallel group", "parallel group"]];
+    $("tw-map").innerHTML = `<tr><th>machine</th><th>${alt ? "force-voltage" : "force-current (this course)"}</th></tr>` + rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("");
+    $("tw-alt").setAttribute("aria-pressed", alt); $("tw-alt").textContent = alt ? "Back to force-current" : "Show the other analogy";
+  }
+  // two separate models
+  const fMech = q => (t, y) => [y[1], (force(t, q.F0) - q.b * y[1] - q.kg * y[0]) / q.m];              // x_B, v_B
+  const fCirc = q => (t, y) => { const C = q.m, R = 1 / q.b, L2 = q.kg ? 1 / q.kg : Infinity;           // e_B, i_L2
+    return [(force(t, q.F0) - y[0] / R - y[1]) / C, isFinite(L2) ? y[0] / L2 : 0]; };
+  function step(dtReal){
+    const p = PRE[sys], q = par(), DT = p.win / 3000; S.acc += dtReal * p.speed; let n = 0;
+    while (S.acc >= DT && n < 400){ S.mech = rk4(fMech(q), S.t, S.mech, DT); S.circ = rk4(fCirc(q), S.t, S.circ, DT); S.t += DT; S.acc -= DT; n++;
+      if (++S.k % 3 === 0){ S.v.push([S.t, S.mech[1]]); S.e.push([S.t, S.circ[0]]); S.maxd = Math.max(S.maxd, Math.abs(S.mech[1] - S.circ[0])); } }
+    while (S.v.length > 4000){ S.v.shift(); S.e.shift(); }
+    drawMech(); drawPlot();
+  }
+  function drawPlot(){
+    drawStrip($("tw-plot"), {tEnd: S.t, window: PRE[sys].win, auto: true, include: [0, 0.01], ylabel: "v_B [m/s] and e_B [V]",
+      series: [{pts: S.v, color: tok("--s-closed")}, {pts: S.e, color: tok("--s-open"), dash: [7, 5], width: 2}]});
+    const q = par(), chips = [chip("--s-closed", "v_B", fmt(S.mech[1], 3) + " m/s"), chip("--s-open", "e_B", fmt(S.circ[0], 3) + " V"),
+      chip("--ink2", "max |v − e|", S.maxd.toExponential(1))];
+    if (inp === "step" && !q.kg) chips.push(chip("--sig-r", "F/b", fmt(q.F0 / q.b, 2) + " m/s"), chip("--sig-r", "m/b", fmt(q.m / q.b, 2) + " s"));
+    if (q.kg) chips.push(chip("--sig-r", "ωₙ = √(k/m)", fmt(Math.sqrt(q.kg / q.m), 2) + " rad/s"));
+    $("tw-chips").innerHTML = chips.join("");
+  }
+  function drawMech(){
+    const cv = $("tw-mech"), {ctx, w, h} = fitCanvas(cv); ctx.clearRect(0, 0, w, h);
+    const p = PRE[sys], q = par(); ctx.strokeStyle = tok("--ink"); ctx.lineWidth = 1.6; ctx.lineCap = "round";
+    const cx = w / 2, floor = h - 26;
+    // displacement shown for spring-to-ground systems; otherwise a velocity arrow
+    const xs = q.kg ? Math.max(-28, Math.min(28, S.mech[0] / (q.F0 / q.kg) * 22)) : 0;
+    const mTop = h * 0.42 + xs, mH = 38, mW = 84;
+    let top = 40;
+    if (p.ks){ SCH.dot(ctx, cx, top); SCH.spring(ctx, [cx, top], [cx, mTop]); SCH.text(ctx, sys === "ex4" ? "k₁" : "k", cx - 18, (top + mTop) / 2, "right"); }
+    else SCH.line(ctx, [[cx, top], [cx, mTop]]);
+    ctx.strokeStyle = tok("--accent"); ctx.lineWidth = 2.4; SCH.line(ctx, [[cx, 8], [cx, top - 4]]);
+    ctx.fillStyle = tok("--accent"); ctx.beginPath(); ctx.moveTo(cx, top - 2); ctx.lineTo(cx - 5, top - 11); ctx.lineTo(cx + 5, top - 11); ctx.fill();
+    SCH.text(ctx, "F", cx + 10, 16);
+    ctx.strokeStyle = tok("--ink"); ctx.lineWidth = 1.6;
+    ctx.fillStyle = tok("--surface2"); ctx.fillRect(cx - mW / 2, mTop, mW, mH); ctx.strokeRect(cx - mW / 2, mTop, mW, mH); SCH.text(ctx, "m", cx, mTop + mH / 2, "center");
+    const bx = q.kg ? cx - 22 : cx, kx = cx + 22, by = mTop + mH;
+    if (q.kg){ SCH.line(ctx, [[bx, by], [bx, by + 8]]); SCH.line(ctx, [[kx, by], [kx, by + 8]]);
+      SCH.damper(ctx, [bx, by + 8], [bx, floor]); SCH.spring(ctx, [kx, by + 8], [kx, floor]);
+      SCH.text(ctx, "b", bx - 16, (by + floor) / 2, "right"); SCH.text(ctx, sys === "ex4" ? "k₂" : "k", kx + 16, (by + floor) / 2); }
+    else { SCH.damper(ctx, [bx, by], [bx, floor]); SCH.text(ctx, sys === "car" ? "b (drag)" : "b", bx - 16, (by + floor) / 2, "right"); }
+    SCH.ground(ctx, cx, floor, 110);
+    // velocity arrow
+    const vmax = q.F0 / q.b, v = S.mech[1], len = Math.max(-50, Math.min(50, v / vmax * 45));
+    if (Math.abs(len) > 1){ const ax = cx + mW / 2 + 22, ay = mTop + mH / 2; ctx.strokeStyle = tok("--s-closed"); ctx.lineWidth = 2.4;
+      SCH.line(ctx, [[ax, ay - len / 2], [ax, ay + len / 2]]); ctx.fillStyle = tok("--s-closed"); const d = Math.sign(len);
+      ctx.beginPath(); ctx.moveTo(ax, ay + len / 2 + 2 * d); ctx.lineTo(ax - 5, ay + len / 2 - 7 * d); ctx.lineTo(ax + 5, ay + len / 2 - 7 * d); ctx.fill();
+      ctx.fillStyle = tok("--s-closed"); ctx.font = "12px " + tok("--sans"); ctx.textAlign = "left"; ctx.fillText("v_B", ax + 8, ay); }
+  }
+  function drawCirc(){
+    const p = PRE[sys], q = par(), spec = [];
+    if (p.ks) spec.push({t: "series", br: [[{k: "L", l: `L=${fmt(1 / +el.k.value, 3)}`}]]});
+    const sh = [{k: "C", l: `C=${q.m}`}, {k: "R", l: `R=${fmt(1 / q.b, 3)}`}]; if (q.kg) sh.push({k: "L", l: `L=${fmt(1 / q.kg, 3)}`});
+    spec.push({t: "shunt", els: sh});
+    drawLadder($("tw-circ"), spec, {src: "i"});
+  }
+  $("tw-sys").addEventListener("change", e => { sys = e.target.value; preset(); });
+  segInit("tw-in", v => { inp = v; reset(); });
+  for (const k in el) el[k].addEventListener("input", reset);
+  $("tw-go").addEventListener("click", reset);
+  $("tw-alt").addEventListener("click", () => { alt = !alt; out(); });
+  preset();
+  labs.tw = {active: false, step, redraw: () => { drawCirc(); drawMech(); drawPlot(); }};
+})();
+
+/* ============================================================ 4 IMPEDANCE */
+(() => {
+  const V = {m: 1, b: 2, k: 20, k1: 20, k2: 30, b1: 2, b2: 3};
+  const Q = [
+    {q: "Example 3. A block m on a frictionless floor is tied to the wall by a spring k and a damper b side by side. The force F acts on the block.",
+     net: [{t: "shunt", els: [{k: "m", l: "m"}, {k: "k", l: "k"}, {k: "b", l: "b"}]}],
+     ch: ["s / (ms² + bs + k)", "1/(ms) + 1/b + s/k", "ms + b + k/s", "1 / (ms² + bs + k)"], a: 0,
+     why: "m, k and b all move with the velocity of the block: parallel. Admittances add: ms + b + k/s, so Z = 1/(ms + b + k/s) = s/(ms² + bs + k). The last option is X/F, not V/F.",
+     Z: () => par(par(Zel.m(V.m), Zel.k(V.k)), Zel.b(V.b)), win: 6, vals: "m = 1 kg, b = 2 N·s/m, k = 20 N/m"},
+    {q: "Example 2. The force F pushes the free end of a spring k, the spring pushes a damper b, and the damper pushes a block m that slides freely.",
+     net: [{t: "series", br: [[{k: "k", l: "k"}]]}, {t: "series", br: [[{k: "b", l: "b"}]]}, {t: "shunt", els: [{k: "m", l: "m"}]}],
+     ch: ["s/k + 1/b + 1/(ms)", "s / (ms² + bs + k)", "k/s + b + ms", "1 / (k + b + m)"], a: 0,
+     why: "One force passes through k, b and m in turn: series. Impedances add: s/k + 1/b + 1/(ms).",
+     Z: () => ser(ser(Zel.k(V.k), Zel.b(V.b)), Zel.m(V.m)), win: 6, vals: "m = 1 kg, b = 2 N·s/m, k = 20 N/m"},
+    {q: "Two springs k₁ and k₂ are joined end to end; the far end is fixed to a wall. The force F pulls the free end.",
+     net: [{t: "series", br: [[{k: "k", l: "k₁"}]]}, {t: "shunt", els: [{k: "k", l: "k₂"}]}],
+     ch: ["s/k₁ + s/k₂", "s / (k₁ + k₂)", "(k₁ + k₂) / s", "k₁k₂ / (s(k₁ + k₂))"], a: 0,
+     why: "Both springs carry the same force: series. Z = s/k₁ + s/k₂, so 1/k_eq = 1/k₁ + 1/k₂ (inductors in series).",
+     Z: () => ser(Zel.k(V.k1), Zel.k(V.k2)), win: 4, vals: "k₁ = 20 N/m, k₂ = 30 N/m"},
+    {q: "Two dampers b₁ and b₂ connect a light plate to the wall side by side. The force F pushes the plate.",
+     net: [{t: "shunt", els: [{k: "b", l: "b₁"}, {k: "b", l: "b₂"}]}],
+     ch: ["1 / (b₁ + b₂)", "1/b₁ + 1/b₂", "b₁ + b₂", "b₁b₂ / (b₁ + b₂)"], a: 0,
+     why: "Both dampers move with the plate: parallel. Admittances add: b₁ + b₂, so Z = 1/(b₁ + b₂).",
+     Z: () => par(Zel.b(V.b1), Zel.b(V.b2)), win: 4, vals: "b₁ = 2, b₂ = 3 N·s/m"},
+    {q: "Example 1. The force F pulls the free end of a spring k; the spring holds a block m, which is tied to the ground by a damper b.",
+     net: [{t: "series", br: [[{k: "k", l: "k"}]]}, {t: "shunt", els: [{k: "m", l: "m"}, {k: "b", l: "b"}]}],
+     ch: ["(ms² + bs + k) / (k(ms + b))", "1 / (ms + b)", "s/k + 1/b + 1/(ms)", "s / (ms² + bs + k)"], a: 0,
+     why: "The spring carries F (series); m and b share the velocity of the block (parallel). Z = s/k + 1/(ms + b) = (ms² + bs + k)/(k(ms + b)). 1/(ms + b) is the transfer impedance to the block.",
+     Z: () => ser(Zel.k(V.k), par(Zel.m(V.m), Zel.b(V.b))), win: 6, vals: "m = 1 kg, b = 2 N·s/m, k = 20 N/m"},
+    {q: "Example 4. The force F pulls a spring k₁; the spring holds a block m that rests on a damper b and a spring k₂ to the ground.",
+     net: [{t: "series", br: [[{k: "k", l: "k₁"}]]}, {t: "shunt", els: [{k: "m", l: "m"}, {k: "b", l: "b"}, {k: "k", l: "k₂"}]}],
+     ch: ["s/k₁ + s/(ms² + bs + k₂)", "s / (ms² + bs + k₁ + k₂)", "s(ms² + bs + k₁ + k₂) / (k₁(ms² + bs + k₁))", "1/k₁ + 1/(ms² + bs + k₂)"], a: 0,
+     why: "k₁ in series with the parallel group m, b, k₂: Z = s/k₁ + s/(ms² + bs + k₂). The third option is the misprint of the 2023 notes (k₁ in the last factor).",
+     Z: () => ser(Zel.k(V.k1), par(par(Zel.m(V.m), Zel.b(V.b)), Zel.k(V.k2))), win: 6, vals: "m = 1 kg, b = 2 N·s/m, k₁ = 20, k₂ = 30 N/m"},
+    {q: "The force F pushes a damper b₁; the damper pushes a block m that is held by a spring k to the wall.",
+     net: [{t: "series", br: [[{k: "b", l: "b₁"}]]}, {t: "shunt", els: [{k: "m", l: "m"}, {k: "k", l: "k"}]}],
+     ch: ["1/b₁ + s/(ms² + k)", "1 / (b₁ + ms + k/s)", "b₁ + ms + k/s", "1/b₁ + 1/(ms) + s/k"], a: 0,
+     why: "b₁ carries F (series); m and k share the block's velocity (parallel): Z = 1/b₁ + 1/(ms + k/s) = 1/b₁ + s/(ms² + k).",
+     Z: () => ser(Zel.b(V.b1), par(Zel.m(V.m), Zel.k(V.k))), win: 6, vals: "m = 1 kg, b₁ = 2 N·s/m, k = 20 N/m"},
+    {q: "The car of Lecture 1: mass m, pushed by the engine force F, slowed by linear drag b.",
+     net: [{t: "shunt", els: [{k: "m", l: "m"}, {k: "b", l: "b"}]}],
+     ch: ["1 / (ms + b)", "1/(ms) + 1/b", "ms + b", "m/b"], a: 0,
+     why: "Mass and drag share the car's velocity: parallel, Z = 1/(ms + b). This is the transfer function V(s)/F(s) of Lecture 2. Time constant m/b = 20 s.",
+     Z: () => par(Zel.m(1000), Zel.b(50)), win: 100, vals: "m = 1000 kg, b = 50 N·s/m"}
+  ];
+  let order, idx, score, answered;
+  const best = () => store.get("ml-best", null);
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  function round(){ order = shuffle(Q.map((_, i) => i)); idx = 0; score = 0; $("iq-score").textContent = 0; show(); }
+  function show(){
+    const it = Q[order[idx]]; answered = false;
+    $("iq-prog").textContent = `Question ${idx + 1} of ${Q.length}`; $("iq-q").textContent = it.q;
+    const opts = shuffle(it.ch.map((c, i) => ({c, ok: i === it.a})));
+    $("iq-choices").innerHTML = opts.map((o, i) => `<button id="iq-c${i}" data-ok="${o.ok}">Z = ${o.c}</button>`).join("");
+    document.querySelectorAll("#iq-choices button").forEach(b => b.addEventListener("click", () => answer(b)));
+    $("iq-fb").hidden = true; $("iq-plot-box").hidden = true; $("iq-next").disabled = true;
+    $("iq-best").textContent = best() == null ? "–" : `${best()} / ${Q.length}`;
+    drawNet();
+  }
+  function answer(b){
+    if (answered) return; answered = true; const it = Q[order[idx]], ok = b.dataset.ok === "true";
+    document.querySelectorAll("#iq-choices button").forEach(x => { x.disabled = true; if (x.dataset.ok === "true") x.dataset.state = "right"; });
+    if (!ok) b.dataset.state = "wrong"; else { score++; $("iq-score").textContent = score; }
+    $("iq-fb").hidden = false; verdict($("iq-fb"), ok ? "--sig-c" : "--warn-bar", (ok ? "<b>Right.</b> " : "<b>Not this one.</b> ") + it.why);
+    $("iq-plot-box").hidden = false; drawResp();
+    if (idx === Q.length - 1){ $("iq-next").textContent = "Finish round"; if (best() == null || score > best()) store.set("ml-best", score); $("iq-best").textContent = `${best()} / ${Q.length}`; }
+    else $("iq-next").textContent = "Next question";
+    $("iq-next").disabled = false;
+  }
+  function drawNet(){ drawLadder($("iq-net"), Q[order[idx]].net, {src: "F"}); }
+  function drawResp(){
+    if ($("iq-plot-box").hidden) return; const it = Q[order[idx]], Z = it.Z(), Xs = [Z[0], P.mul(Z[1], [1, 0])];
+    const pts = stepTF(Xs[0], Xs[1], it.win);
+    let y0 = 0, y1 = 0; for (const p of pts){ y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); } const pad = (y1 - y0) * 0.1 || 0.01;
+    drawXY($("iq-plot"), {x0: 0, x1: it.win, y0: y0 - pad, y1: y1 + pad, xlabel: `time t [s]   (${it.vals})`, ylabel: "x of the force point [m]",
+      series: [{pts, color: tok("--s-closed")}]});
+  }
+  $("iq-next").addEventListener("click", () => { if (idx < Q.length - 1){ idx++; show(); } else round(); });
+  $("iq-new").addEventListener("click", round);
+  round();
+  labs.imp = {active: false, step: null, redraw: () => { drawNet(); drawResp(); }};
+})();
+
+/* ---------- boot ------------------------------------------------------- */
+const initial = (location.hash || "").slice(1);
+const saved = store.get("ml-tab", "lin");
+showTab(labs[initial] ? initial : (labs[saved] ? saved : "lin"));
+requestAnimationFrame(frame);
+</script>
+
+</body>
+</html>

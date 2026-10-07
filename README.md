@@ -11,6 +11,7 @@ nothing needs to be installed.
 | Course | Material | Link |
 |---|---|---|
 | ME 3001 System Dynamics and Control | Lecture 1 · Feedback lab: cruise control, shower delay, Watt's governor, "you are the controller" | [open](https://mycoskun.github.io/teaching-labs/me3001/l01-feedback-lab/) |
+| ME 3001 System Dynamics and Control | Lecture 3 · Model lab: pendulum linearization, across and through variables, machine and circuit twins, impedance trainer | [open](https://mycoskun.github.io/teaching-labs/me3001/l03-model-lab/) |
 
 ## Layout
 
