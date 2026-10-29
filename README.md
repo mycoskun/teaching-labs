@@ -12,6 +12,7 @@ nothing needs to be installed.
 |---|---|---|
 | ME 3001 System Dynamics and Control | Lecture 1 · Feedback lab: cruise control, shower delay, Watt's governor, "you are the controller" | [open](https://mycoskun.github.io/teaching-labs/me3001/l01-feedback-lab/) |
 | ME 3001 System Dynamics and Control | Lecture 3 · Model lab: pendulum linearization, across and through variables, machine and circuit twins, impedance trainer | [open](https://mycoskun.github.io/teaching-labs/me3001/l03-model-lab/) |
+| ME 3001 System Dynamics and Control | Lecture 4 · One Block: block diagram reduction game with 40 levels, random practice (two inputs, numeric blocks), a which-rule quiz and class voting; Turkish and English | [open](https://mycoskun.github.io/teaching-labs/me3001/l04-one-block/) |
 
 ## Layout
 
